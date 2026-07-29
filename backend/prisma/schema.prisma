@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id            String         @id @default(uuid())
+  name          String
+  type          String         // restaurant, real estate, ecommerce, consulting, generic
+  phone         String?
+  email         String?
+  address       String?
+  website       String?
+  description   String?
+  knowledgeBase Json?          // Business knowledge base (products, services, FAQs)
+  rules         Json?          // Business rules and guidelines
+  workingHours  Json?          // Working hours configuration
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+  appointments  Appointment[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String?
+  phone     String?  @unique
+  email     String?  @unique
+  metadata  Json?    // Additional customer data
+  createdAt DateTime @default(now())
+  conversations Conversation[]
+}
+
+model Conversation {
+  id         String    @id @default(uuid())
+  businessId String
+  customerId String?
+  channel    String    // phone, whatsapp, web, sms
+  status     String    @default("active") // active, closed, transferred
+  metadata   Json?     // Call duration, recording URL, etc.
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  messages   Message[]
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer   Customer? @relation(fields: [customerId], references: [id])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           String       // user, assistant, system
+  content        String
+  tokens         Int?         // Token usage
+  metadata       Json?        // Additional message data
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  businessId  String
+  customerName String
+  customerPhone String
+  customerEmail String?
+  date        DateTime
+  time        String
+  service     String
+  notes       String?
+  status      String   @default("pending") // pending, confirmed, cancelled, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}

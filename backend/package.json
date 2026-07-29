@@ -1,0 +1,38 @@
+{
+  "name": "calling-agent-backend",
+  "version": "1.0.0",
+  "description": "AI-powered Business Calling Agent Backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "db:seed": "node prisma/seed.js"
+  },
+  "keywords": [
+    "ai",
+    "calling-agent",
+    "business",
+    "twilio",
+    "groq"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.4.0",
+    "helmet": "^8.3.0",
+    "morgan": "^1.11.0",
+    "twilio": "^6.0.2",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0"
+  }
+}
