@@ -61,29 +61,35 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
+  static truncate(text, maxLength = 2000) {
+    if (!text) return text;
+    const str = String(text);
+    return str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
+  }
+
   static buildSystemPrompt(business, channel = 'web') {
     const typePrompt = BUSINESS_TYPE_PROMPTS[business.type] || BUSINESS_TYPE_PROMPTS.generic;
 
     let knowledgeContext = '';
     if (business.knowledgeBase) {
       const kb = business.knowledgeBase;
-      knowledgeContext = `\n\nBUSINESS KNOWLEDGE BASE:\n${JSON.stringify(kb, null, 2)}`;
+      knowledgeContext = `\n\nBUSINESS KNOWLEDGE BASE:\n${this.truncate(JSON.stringify(kb, null, 2), 2500)}`;
     }
 
     let rulesContext = '';
     if (business.rules) {
       const rules = business.rules;
-      rulesContext = `\n\nBUSINESS RULES:\n${JSON.stringify(rules, null, 2)}`;
+      rulesContext = `\n\nBUSINESS RULES:\n${this.truncate(JSON.stringify(rules, null, 2), 1500)}`;
     }
 
     let hoursContext = '';
     if (business.workingHours) {
-      hoursContext = `\n\nWORKING HOURS:\n${JSON.stringify(business.workingHours, null, 2)}`;
+      hoursContext = `\n\nWORKING HOURS:\n${this.truncate(JSON.stringify(business.workingHours, null, 2), 800)}`;
     }
 
     let infoContext = '';
     const infoParts = [];
-    if (business.description) infoParts.push(`Description: ${business.description}`);
+    if (business.description) infoParts.push(`Description: ${this.truncate(business.description, 1500)}`);
     if (business.phone) infoParts.push(`Phone: ${business.phone}`);
     if (business.email) infoParts.push(`Email: ${business.email}`);
     if (business.address) infoParts.push(`Address: ${business.address}`);
@@ -101,7 +107,7 @@ class AIService {
     return `${SYSTEM_PROMPT_BASE}\n\n${GROQ_SYSTEM_PROMPT}\n\n${typePrompt}\n\nBUSINESS: ${business.name}${knowledgeContext}${rulesContext}${infoContext}${hoursContext}${channelContext}`;
   }
 
-  static async getConversationHistory(conversationId, limit = 20) {
+  static async getConversationHistory(conversationId, limit = 8) {
     const messages = await prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
@@ -160,7 +166,7 @@ class AIService {
       model: GROQ_MODEL,
       messages,
       temperature: 0.7,
-      max_tokens: 1024,
+      max_tokens: 600,
       top_p: 0.9,
     });
 
