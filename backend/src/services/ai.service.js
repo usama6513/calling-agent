@@ -63,7 +63,12 @@ IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 class AIService {
   static stripThink(text) {
     if (!text) return text;
-    return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    let result = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+    const openIdx = result.lastIndexOf('<think>');
+    if (openIdx !== -1) {
+      result = result.slice(0, openIdx);
+    }
+    return result.trim();
   }
 
   static truncate(text, maxLength = 2000) {
