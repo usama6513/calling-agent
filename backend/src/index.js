@@ -59,12 +59,14 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Calling Agent Server running on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🤖 AI Model: ${process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'}`);
-  console.log(`📊 API: http://localhost:${PORT}`);
-  console.log(`💚 Health: http://localhost:${PORT}/health\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Calling Agent Server running on port ${PORT}`);
+    console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🤖 AI Model: ${process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'}`);
+    console.log(`📊 API: http://localhost:${PORT}`);
+    console.log(`💚 Health: http://localhost:${PORT}/health\n`);
+  });
+}
 
 module.exports = app;
