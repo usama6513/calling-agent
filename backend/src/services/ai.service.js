@@ -43,6 +43,8 @@ Always be professional, insightful, and value-driven.`,
 Always be professional, helpful, and adaptable.`,
 };
 
+const GROQ_SYSTEM_PROMPT = `Always respond in ENGLISH only.`;
+
 const SYSTEM_PROMPT_BASE = `You are an AI-powered business assistant for a real business. Your role is to help customers professionally and efficiently.
 
 CORE RULES:
