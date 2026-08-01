@@ -27,6 +27,9 @@ export default function BusinessPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Business | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: 'generic',
@@ -120,13 +123,27 @@ export default function BusinessPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this business?')) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteConfirmText !== deleteTarget.name) {
+      alert('Business name does not match. Deletion cancelled.');
+      return;
+    }
+    setDeleting(true);
     try {
-      await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${id}`, { method: 'DELETE' });
-      fetchBusinesses();
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${deleteTarget.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDeleteTarget(null);
+        setDeleteConfirmText('');
+        fetchBusinesses();
+      } else {
+        alert('Failed to delete business.');
+      }
     } catch (error) {
+      alert('Failed to delete business.');
       console.error('Failed to delete business:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -185,7 +202,7 @@ export default function BusinessPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(business.id)}
+                  onClick={() => { setDeleteTarget(business); setDeleteConfirmText(''); }}
                   className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm"
                 >
                   Delete
@@ -292,6 +309,42 @@ export default function BusinessPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Delete Business?</h2>
+            <p className="text-gray-600 mb-1">
+              You are about to permanently delete <strong>{deleteTarget.name}</strong> and all its conversations.
+            </p>
+            <p className="text-gray-500 text-sm mb-4">
+              This action cannot be undone. Type <strong>{deleteTarget.name}</strong> below to confirm.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={deleteTarget.name}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteConfirmText(''); }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteConfirmText !== deleteTarget.name || deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}
