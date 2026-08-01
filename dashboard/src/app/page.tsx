@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/business?limit=100')
+    fetch('https://backend-seven-chi-71.vercel.app/api/business?limit=100')
       .then((r) => r.json())
       .then((d) => setStats({ totalBusinesses: d.pagination?.total || 0, totalConversations: 0 }))
       .catch(() => {})

@@ -44,7 +44,7 @@ export default function BusinessPage() {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/business');
+      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/business');
       if (!res.ok) throw new Error('Server error');
       const data = await res.json();
       setBusinesses(data.data || []);
@@ -64,8 +64,8 @@ export default function BusinessPage() {
       try { body.rules = formData.rules ? JSON.parse(formData.rules) : {}; } catch { body.rules = {}; }
 
       const url = editingId
-        ? `http://localhost:5000/api/business/${editingId}`
-        : 'http://localhost:5000/api/business';
+        ? `https://backend-seven-chi-71.vercel.app/api/business/${editingId}`
+        : 'https://backend-seven-chi-71.vercel.app/api/business';
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -93,7 +93,7 @@ export default function BusinessPage() {
     let kb = '';
     let rules = '';
     try {
-      const res = await fetch(`http://localhost:5000/api/business/${business.id}`);
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${business.id}`);
       const data = await res.json();
       if (data.success && data.data) {
         kb = data.data.knowledgeBase ? JSON.stringify(data.data.knowledgeBase, null, 2) : '';
@@ -123,7 +123,7 @@ export default function BusinessPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this business?')) return;
     try {
-      await fetch(`http://localhost:5000/api/business/${id}`, { method: 'DELETE' });
+      await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${id}`, { method: 'DELETE' });
       fetchBusinesses();
     } catch (error) {
       console.error('Failed to delete business:', error);

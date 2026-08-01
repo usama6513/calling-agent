@@ -19,7 +19,7 @@
     businessId: configElement?.getAttribute('data-business-id') || 'c85ef6f5-75a8-4930-b25c-a44693149162',
     theme: configElement?.getAttribute('data-theme') || 'blue',
     position: configElement?.getAttribute('data-position') || 'bottom-right',
-    apiUrl: configElement?.getAttribute('data-api-url') || 'http://localhost:5000',
+    apiUrl: configElement?.getAttribute('data-api-url') || 'https://backend-seven-chi-71.vercel.app',
     title: configElement?.getAttribute('data-title') || 'Chat with us',
     subtitle: configElement?.getAttribute('data-subtitle') || 'We typically reply in a few seconds',
     placeholder: configElement?.getAttribute('data-placeholder') || 'Type your message...',

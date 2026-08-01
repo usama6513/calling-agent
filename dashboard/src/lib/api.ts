@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://backend-seven-chi-71.vercel.app';
 
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE}${endpoint}`;

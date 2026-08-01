@@ -41,7 +41,7 @@ export default function ChatPage() {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/business');
+      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/business');
       const data = await res.json();
       setBusinesses(data.data || []);
       if (data.data?.length > 0) setSelectedBusiness(data.data[0].id);
@@ -58,7 +58,7 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/chat', {
+      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessId: selectedBusiness, conversationId, message: userMessage, channel: 'web' }),

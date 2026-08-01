@@ -31,7 +31,7 @@ export default function ConversationsPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/business')
+    fetch('https://backend-seven-chi-71.vercel.app/api/business')
       .then((r) => r.json())
       .then((d) => { setBusinesses(d.data || []); if (d.data?.length) setSelectedBusiness(d.data[0].id); })
       .catch(() => {});
@@ -44,7 +44,7 @@ export default function ConversationsPage() {
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/conversations/${selectedBusiness}`);
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/${selectedBusiness}`);
       const data = await res.json();
       setConversations(data.data || []);
     } catch {
@@ -55,7 +55,7 @@ export default function ConversationsPage() {
 
   const loadDetail = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/conversations/detail/${id}`);
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/detail/${id}`);
       const data = await res.json();
       setSelectedConversation(data.data);
     } catch {}
