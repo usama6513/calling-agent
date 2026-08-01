@@ -61,6 +61,11 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
+  static stripThink(text) {
+    if (!text) return text;
+    return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  }
+
   static truncate(text, maxLength = 2000) {
     if (!text) return text;
     const str = String(text);
@@ -174,7 +179,7 @@ class AIService {
       top_p: 0.9,
     });
 
-    const assistantMessage = completion.choices[0]?.message?.content;
+    const assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
 
     if (!assistantMessage) {
       throw new Error('No response generated from AI');
@@ -220,7 +225,7 @@ class AIService {
       max_tokens: maxTokens,
     });
 
-    return completion.choices[0]?.message?.content;
+    return this.stripThink(completion.choices[0]?.message?.content);
   }
 }
 
