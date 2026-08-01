@@ -14,6 +14,9 @@ class BusinessService {
         knowledgeBase: data.knowledgeBase || {},
         rules: data.rules || {},
         workingHours: data.workingHours || {},
+        aiModel: data.aiModel || null,
+        temperature: data.temperature ?? null,
+        maxTokens: data.maxTokens ?? null,
       },
     });
   }

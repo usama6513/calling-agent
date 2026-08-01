@@ -65,4 +65,9 @@ export const api = {
     updateStatus: (id: string, status: string) =>
       fetchAPI(`/api/appointments/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
   },
+
+  models: {
+    getAll: () =>
+      fetchAPI('/api/groq/models'),
+  },
 };

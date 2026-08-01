@@ -19,6 +19,9 @@ model Business {
   knowledgeBase Json?          // Business knowledge base (products, services, FAQs)
   rules         Json?          // Business rules and guidelines
   workingHours  Json?          // Working hours configuration
+  aiModel       String?        // Overrides global GROQ_MODEL
+  temperature   Float?         // Overrides default 0.7
+  maxTokens     Int?           // Overrides default 600
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   conversations Conversation[]

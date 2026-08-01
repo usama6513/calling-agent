@@ -162,11 +162,15 @@ class AIService {
       ...history,
     ];
 
+    const model = business.aiModel || GROQ_MODEL;
+    const temperature = business.temperature ?? 0.7;
+    const maxTokens = business.maxTokens ?? 600;
+
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+      model,
       messages,
-      temperature: 0.7,
-      max_tokens: 600,
+      temperature,
+      max_tokens: maxTokens,
       top_p: 0.9,
     });
 
@@ -205,11 +209,15 @@ class AIService {
 
     messages.push({ role: 'user', content: prompt });
 
+    const model = business.aiModel || GROQ_MODEL;
+    const temperature = business.temperature ?? 0.7;
+    const maxTokens = business.maxTokens ?? 600;
+
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+      model,
       messages,
-      temperature: 0.7,
-      max_tokens: 1024,
+      temperature,
+      max_tokens: maxTokens,
     });
 
     return completion.choices[0]?.message?.content;
