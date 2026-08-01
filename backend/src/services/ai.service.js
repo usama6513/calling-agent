@@ -176,15 +176,23 @@ class AIService {
     const temperature = business.temperature ?? 0.7;
     const maxTokens = business.maxTokens ?? 600;
 
-    const completion = await groq.chat.completions.create({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-      top_p: 0.9,
-    });
+    const callGroq = async (tokenLimit) => {
+      return groq.chat.completions.create({
+        model,
+        messages,
+        temperature,
+        max_tokens: tokenLimit,
+        top_p: 0.9,
+      });
+    };
 
-    const assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
+    let completion = await callGroq(maxTokens);
+    let assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
+
+    if (!assistantMessage && maxTokens < 2048) {
+      completion = await callGroq(2048);
+      assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
+    }
 
     if (!assistantMessage) {
       throw new Error('No response generated from AI');
@@ -223,14 +231,24 @@ class AIService {
     const temperature = business.temperature ?? 0.7;
     const maxTokens = business.maxTokens ?? 600;
 
-    const completion = await groq.chat.completions.create({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    });
+    const callGroq = async (tokenLimit) => {
+      return groq.chat.completions.create({
+        model,
+        messages,
+        temperature,
+        max_tokens: tokenLimit,
+      });
+    };
 
-    return this.stripThink(completion.choices[0]?.message?.content);
+    let completion = await callGroq(maxTokens);
+    let content = this.stripThink(completion.choices[0]?.message?.content);
+
+    if (!content && maxTokens < 2048) {
+      completion = await callGroq(2048);
+      content = this.stripThink(completion.choices[0]?.message?.content);
+    }
+
+    return content;
   }
 }
 
