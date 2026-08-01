@@ -1,0 +1,11 @@
+node_modules
+backend/node_modules
+.env
+backend/.env
+.git
+.next
+dashboard/.next
+backend/.next
+dist
+build
+*.log
