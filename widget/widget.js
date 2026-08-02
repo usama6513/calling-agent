@@ -16,7 +16,7 @@
   let configElement = document.querySelector('script[data-business-id]');
 
   const CONFIG = {
-    businessId: configElement?.getAttribute('data-business-id') || 'c85ef6f5-75a8-4930-b25c-a44693149162',
+    businessId: configElement?.getAttribute('data-business-id') || 'c343c2c4-395b-4c80-bace-9abe0cc7f18b',
     theme: configElement?.getAttribute('data-theme') || 'blue',
     position: configElement?.getAttribute('data-position') || 'bottom-right',
     apiUrl: configElement?.getAttribute('data-api-url') || 'https://backend-seven-chi-71.vercel.app',
