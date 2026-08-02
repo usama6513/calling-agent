@@ -75,10 +75,12 @@ IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 class AIService {
   static async extractPdfText(buffer) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    const standardFonts = require('path').join(__dirname, '..', 'standard_fonts');
+    const { pathToFileURL } = require('url');
+    const fontsDir = require('path').join(__dirname, '..', 'standard_fonts');
+    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(require('path').join(fontsDir, 'pdf.worker.min.mjs')).href;
     const doc = await pdfjs.getDocument({
       data: new Uint8Array(buffer),
-      standardFontDataUrl: `${standardFonts}${require('path').sep}`,
+      standardFontDataUrl: `${fontsDir}${require('path').sep}`,
       isEvalSupported: false,
     }).promise;
     try {
