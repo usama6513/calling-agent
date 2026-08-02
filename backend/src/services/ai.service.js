@@ -2,6 +2,7 @@ const { groq, GROQ_MODEL } = require('../config/groq');
 const { GEMINI_API_KEY, GEMINI_MODELS } = require('../config/gemini');
 const prisma = require('../config/db');
 const mammoth = require('mammoth');
+const URLScanner = require('./url-scanner.service');
 
 const BUSINESS_TYPE_PROMPTS = {
   restaurant: `You are an AI receptionist for a restaurant. You can:
@@ -68,6 +69,7 @@ FRAUD DETECTION (full knowledge of all scams):
 - What to do if scammed: report to bank, block card, change passwords, report to authorities, keep evidence
 - How to verify legitimacy: official channels, never share OTP/PIN/CVV, verify caller identity independently
 - Red flags of suspicious transactions and unusual account activity
+- URL/link safety analysis: when a URL is provided, use the URL safety scan report to warn about phishing/scam links, fake login pages, and suspicious domains. Explain warning signs and advise the user what to do.
 
 SMART BUDGETING (full knowledge):
 - How to build a monthly budget from income and expenses
@@ -350,6 +352,22 @@ class AIService {
 
     if (attachmentContext) {
       messages.push({ role: 'system', content: `The user has provided an attachment. You DO have access to its content via the description below - it is NOT a real file you need to open. Use it to answer the user's question accurately.\n${attachmentContext}` });
+    }
+
+    const urls = URLScanner.extractUrls(userMessage);
+    if (urls.length > 0) {
+      const reports = [];
+      for (const url of urls) {
+        try {
+          const report = await URLScanner.scanUrl(url);
+          reports.push(report);
+        } catch (error) {
+          console.error(`[URL Scan] ${url} Error:`, error.message);
+          reports.push({ url, verdict: 'unknown', heuristic: { score: 0, verdict: 'unknown', flags: ['Scan failed'] } });
+        }
+      }
+      const urlScanContext = `\n\nURL SAFETY SCAN REPORT (the system scanned these URLs automatically):\n${JSON.stringify(reports, null, 2)}\n\nIf the user asked about one of these URLs, use the scan report above to give a clear verdict (safe / suspicious / scam). Explain the warning signs found and advise what to do. Reply in the user's language.`;
+      messages.push({ role: 'system', content: urlScanContext });
     }
 
     messages.push(...history);
