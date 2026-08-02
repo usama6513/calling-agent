@@ -75,10 +75,7 @@ IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 class AIService {
   static async extractPdfText(buffer) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    const standardFonts = require('path').join(
-      require('path').dirname(require.resolve('pdfjs-dist/package.json')),
-      'standard_fonts'
-    );
+    const standardFonts = require('path').join(__dirname, '..', 'standard_fonts');
     const doc = await pdfjs.getDocument({
       data: new Uint8Array(buffer),
       standardFontDataUrl: `${standardFonts}${require('path').sep}`,
