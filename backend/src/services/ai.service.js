@@ -1,6 +1,5 @@
 const { groq, GROQ_MODEL } = require('../config/groq');
 const prisma = require('../config/db');
-const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
 const BUSINESS_TYPE_PROMPTS = {
@@ -74,14 +73,38 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
+  static async extractPdfText(buffer) {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const standardFonts = require('path').join(
+      require('path').dirname(require.resolve('pdfjs-dist/package.json')),
+      'standard_fonts'
+    );
+    const doc = await pdfjs.getDocument({
+      data: new Uint8Array(buffer),
+      standardFontDataUrl: `${standardFonts}${require('path').sep}`,
+      isEvalSupported: false,
+    }).promise;
+    try {
+      let text = '';
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((it) => it.str).join(' ') + '\n';
+      }
+      return text;
+    } finally {
+      await doc.destroy();
+    }
+  }
+
   static async extractFileText(attachment) {
     const buffer = attachment.data;
     const mime = attachment.mimeType || '';
     const name = (attachment.filename || '').toLowerCase();
 
     if (mime.includes('pdf') || name.endsWith('.pdf')) {
-      const result = await pdfParse(buffer);
-      return `[Attachment: ${attachment.filename} (PDF)]\n${result.text}`;
+      const text = await this.extractPdfText(buffer);
+      return `[Attachment: ${attachment.filename} (PDF)]\n${text}`;
     }
 
     if (mime.includes('docx') || name.endsWith('.docx')) {
