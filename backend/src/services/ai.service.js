@@ -1,4 +1,5 @@
 const { groq, GROQ_MODEL } = require('../config/groq');
+const { GEMINI_API_KEY, GEMINI_MODEL } = require('../config/gemini');
 const prisma = require('../config/db');
 const mammoth = require('mammoth');
 
@@ -73,6 +74,41 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
+  static async describeImage(buffer, mimeType, filename) {
+    if (!GEMINI_API_KEY) {
+      return `[Image file provided. No vision model configured - cannot read image content.]`;
+    }
+    try {
+      const body = {
+        contents: [{
+          parts: [
+            { text: 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.' },
+            { inline_data: { mime_type: mimeType || 'image/jpeg', data: buffer.toString('base64') } }
+          ]
+        }]
+      };
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[Gemini Vision] HTTP', res.status, errText.slice(0, 300));
+        return `[Image file provided but vision API failed (${res.status}).]`;
+      }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return text ? text.trim() : `[Image file provided but could not be analyzed.]`;
+    } catch (error) {
+      console.error('[Gemini Vision] Error:', error.message);
+      return `[Image file provided but vision API failed.]`;
+    }
+  }
+
   static async extractPdfText(buffer) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const { pathToFileURL } = require('url');
@@ -117,7 +153,8 @@ class AIService {
     }
 
     if (mime.startsWith('image/')) {
-      return `[Attachment: ${attachment.filename} (Image file: ${mime})]`;
+      const description = await this.describeImage(buffer, mime, attachment.filename);
+      return `[Attachment: ${attachment.filename} (Image: ${mime})]\nIMAGE DESCRIPTION:\n${description}`;
     }
 
     return `[Attachment: ${attachment.filename} (${mime})]`;
@@ -224,7 +261,11 @@ class AIService {
         where: { id: attachmentId },
       });
       if (attachment) {
-        attachmentContext = `\n\nUSER ATTACHED A FILE — READ IT CAREFULLY:\n${await this.extractFileText(attachment)}`;
+        const isImage = (attachment.mimeType || '').startsWith('image/');
+        const fileText = await this.extractFileText(attachment);
+        attachmentContext = isImage
+          ? `\n\nUSER ATTACHED AN IMAGE. A VISION AI has already analyzed it and here is the accurate description of what the image shows:\n${fileText}`
+          : `\n\nUSER ATTACHED A FILE — READ IT CAREFULLY:\n${fileText}`;
       }
     }
 
@@ -244,7 +285,7 @@ class AIService {
     ];
 
     if (attachmentContext) {
-      messages.push({ role: 'system', content: `FILE CONTENT PROVIDED BY USER:\n${attachmentContext}` });
+      messages.push({ role: 'system', content: `The user has provided an attachment. You DO have access to its content via the description below - it is NOT a real file you need to open. Use it to answer the user's question accurately.\n${attachmentContext}` });
     }
 
     messages.push(...history);
