@@ -2,10 +2,19 @@
 
 import { useEffect, useState, useRef } from 'react';
 
+interface Attachment {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  attachment?: Attachment;
 }
 
 interface Business {
@@ -23,6 +32,9 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -50,10 +62,56 @@ export default function ChatPage() {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !selectedBusiness) return;
+    setUploading(true);
+    try {
+      const body = JSON.stringify({ businessId: selectedBusiness, channel: 'web' });
+      const convoRes = await fetch('https://backend-seven-chi-71.vercel.app/api/chat/ensure-conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      const convoData = await convoRes.json();
+      const convoId = convoData.data?.conversationId || conversationId;
+      if (convoId) setConversationId(convoId);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', convoId);
+      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPendingAttachment({ ...data.data });
+        setMessages((prev) => [...prev, {
+          role: 'user',
+          content: `📎 Attached: ${file.name}`,
+          timestamp: new Date().toISOString(),
+          attachment: { ...data.data },
+        }]);
+      } else {
+        alert('Upload failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Failed to upload file.');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const sendMessage = async () => {
-    if (!input.trim() || !selectedBusiness || loading) return;
-    const userMessage = input.trim();
+    const hasAttachment = !!pendingAttachment;
+    if ((!input.trim() && !hasAttachment) || !selectedBusiness || loading) return;
+    const userMessage = input.trim() || 'Please look at the file I attached and respond to it.';
     setInput('');
+    const attachmentToSend = pendingAttachment;
+    setPendingAttachment(null);
     setMessages((prev) => [...prev, { role: 'user', content: userMessage, timestamp: new Date().toISOString() }]);
     setLoading(true);
 
@@ -61,7 +119,13 @@ export default function ChatPage() {
       const res = await fetch('https://backend-seven-chi-71.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessId: selectedBusiness, conversationId, message: userMessage, channel: 'web' }),
+        body: JSON.stringify({
+          businessId: selectedBusiness,
+          conversationId,
+          message: userMessage,
+          channel: 'web',
+          attachmentId: attachmentToSend?.id || undefined,
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -119,7 +183,7 @@ export default function ChatPage() {
   const clearChat = () => { setMessages([]); setConversationId(null); stopSpeaking(); };
 
   const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = { restaurant: '🍽️ Restaurant', 'real-estate': '🏠 Real Estate', ecommerce: '🛒 E-commerce', consulting: '💼 Consulting', generic: '🏢 Business' };
+    const labels: Record<string, string> = { restaurant: '🍽️ Restaurant', 'real-estate': '🏠 Real Estate', ecommerce: '🛒 E-commerce', consulting: '💼 Consulting', agriculture: '🌾 Agriculture', generic: '🏢 Business' };
     return labels[type] || type;
   };
 
@@ -189,6 +253,26 @@ export default function ChatPage() {
                     ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-md'
                     : 'bg-white text-gray-800 border border-gray-100 rounded-bl-md'
                 }`}>
+                  {msg.attachment && (
+                    <div className="mb-2">
+                      {msg.attachment.mimeType.startsWith('image/') ? (
+                        <img
+                          src={msg.attachment.url}
+                          alt={msg.attachment.filename}
+                          className="max-h-48 rounded-lg"
+                        />
+                      ) : (
+                        <a
+                          href={msg.attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm underline"
+                        >
+                          📎 {msg.attachment.filename}
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-1.5 px-1">
@@ -251,7 +335,41 @@ export default function ChatPage() {
             </div>
           )}
 
+          {pendingAttachment && (
+            <div className="mb-3 flex items-center gap-3 px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <span className="text-sm font-medium text-indigo-700">📎 {pendingAttachment.filename}</span>
+              <button
+                onClick={() => setPendingAttachment(null)}
+                className="ml-auto text-sm text-indigo-500 hover:text-indigo-700 font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+
+          {uploading && (
+            <div className="mb-3 flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-gray-600">Uploading file...</span>
+            </div>
+          )}
+
           <div className="flex items-end gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.docx,.doc,.txt,.md,.csv,.json"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || uploading}
+              title="Attach file (image, PDF, DOCX, TXT)"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 shrink-0"
+            >
+              📎
+            </button>
             <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <textarea
                 value={input}
@@ -277,7 +395,7 @@ export default function ChatPage() {
 
             <button
               onClick={sendMessage}
-              disabled={!input.trim() || loading}
+              disabled={(!input.trim() && !pendingAttachment) || loading || uploading}
               className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-200 transition-all shrink-0 text-lg"
             >
               ➤

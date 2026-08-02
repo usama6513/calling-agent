@@ -19,6 +19,7 @@ const businessTypes = [
   { value: 'real-estate', label: '🏠 Real Estate' },
   { value: 'ecommerce', label: '🛒 E-commerce' },
   { value: 'consulting', label: '💼 Consulting' },
+  { value: 'agriculture', label: '🌾 Agriculture' },
   { value: 'generic', label: '🏢 Generic Business' },
 ];
 

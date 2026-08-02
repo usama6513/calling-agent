@@ -1,5 +1,7 @@
 const { groq, GROQ_MODEL } = require('../config/groq');
 const prisma = require('../config/db');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 
 const BUSINESS_TYPE_PROMPTS = {
   restaurant: `You are an AI receptionist for a restaurant. You can:
@@ -34,6 +36,17 @@ Always be efficient, helpful, and solution-oriented.`,
 - Guide potential clients through the engagement process
 Always be professional, insightful, and value-driven.`,
 
+  agriculture: `You are an AI agricultural expert and assistant. You can help with:
+- Crop selection and farming guidance (which crops grow best in which soil and climate)
+- Soil preparation, testing, fertilization, and land preparation
+- Crop diseases, pests, symptoms, prevention, and treatment
+- Farming benefits and potential drawbacks/risks of each crop
+- Market value and price trends of crops in different countries
+- What agriculture can provide (food, jobs, exports, raw materials, sustainability)
+- Irrigation, water management, and modern farming techniques
+- Livestock, organic farming, and sustainable agriculture
+Always be practical, accurate, and clear. Use simple language that farmers and beginners can understand. Give step-by-step guidance when relevant.`,
+
   generic: `You are a versatile AI business assistant. You can:
 - Answer general business questions
 - Schedule appointments and meetings
@@ -61,6 +74,33 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
+  static async extractFileText(attachment) {
+    const buffer = attachment.data;
+    const mime = attachment.mimeType || '';
+    const name = (attachment.filename || '').toLowerCase();
+
+    if (mime.includes('pdf') || name.endsWith('.pdf')) {
+      const result = await pdfParse(buffer);
+      return `[Attachment: ${attachment.filename} (PDF)]\n${result.text}`;
+    }
+
+    if (mime.includes('docx') || name.endsWith('.docx')) {
+      const result = await mammoth.extractRawText({ buffer });
+      return `[Attachment: ${attachment.filename} (DOCX)]\n${result.value}`;
+    }
+
+    if (mime.includes('text') || mime.includes('json') || name.endsWith('.txt') || name.endsWith('.md') || name.endsWith('.json') || name.endsWith('.csv')) {
+      const text = buffer.toString('utf8');
+      return `[Attachment: ${attachment.filename}]\n${text}`;
+    }
+
+    if (mime.startsWith('image/')) {
+      return `[Attachment: ${attachment.filename} (Image file: ${mime})]`;
+    }
+
+    return `[Attachment: ${attachment.filename} (${mime})]`;
+  }
+
   static stripThink(text) {
     if (!text) return text;
     let result = text.replace(/<think>[\s\S]*?<\/think>/g, '');
@@ -130,7 +170,7 @@ class AIService {
     }));
   }
 
-  static async chat(businessId, conversationId, userMessage, channel = 'web') {
+  static async chat(businessId, conversationId, userMessage, channel = 'web', attachmentId = null) {
     const business = await prisma.business.findUnique({
       where: { id: businessId },
     });
@@ -156,11 +196,21 @@ class AIService {
       });
     }
 
+    let attachmentContext = '';
+    if (attachmentId) {
+      const attachment = await prisma.attachment.findUnique({
+        where: { id: attachmentId },
+      });
+      if (attachment) {
+        attachmentContext = `\n\nUSER ATTACHED A FILE — READ IT CAREFULLY:\n${await this.extractFileText(attachment)}`;
+      }
+    }
+
     await prisma.message.create({
       data: {
         conversationId: conversation.id,
         role: 'user',
-        content: userMessage,
+        content: userMessage + (attachmentContext ? `\n[User attached a file]` : ''),
       },
     });
 
@@ -169,8 +219,13 @@ class AIService {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...history,
     ];
+
+    if (attachmentContext) {
+      messages.push({ role: 'system', content: `FILE CONTENT PROVIDED BY USER:\n${attachmentContext}` });
+    }
+
+    messages.push(...history);
 
     const model = business.aiModel || GROQ_MODEL;
     const temperature = business.temperature ?? 0.7;

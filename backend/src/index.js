@@ -14,6 +14,7 @@ const whatsappRoutes = require('./routes/whatsapp.routes');
 const phoneRoutes = require('./routes/phone.routes');
 const ttsRoutes = require('./routes/tts.routes');
 const modelsRoutes = require('./routes/models.routes');
+const attachmentRoutes = require('./routes/attachment.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +52,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/phone', phoneRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use('/api/groq/models', modelsRoutes);
+app.use('/api', attachmentRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

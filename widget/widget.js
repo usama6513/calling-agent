@@ -28,6 +28,7 @@
 
   let conversationId = null;
   let isOpen = false;
+  let pendingAttachment = null;
 
   const themeColors = {
     blue: { primary: '#2563eb', hover: '#1d4ed8', light: '#eff6ff', gradient: 'linear-gradient(135deg, #2563eb, #4f46e5)' },
@@ -254,6 +255,26 @@
         transform: scale(1.05);
       }
 
+      .ca-attach-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: transparent;
+        color: #64748b;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 18px;
+      }
+
+      .ca-attach-btn:hover {
+        background: #f1f5f9;
+        transform: scale(1.05);
+      }
+
       .ca-send-btn:disabled {
         background: #cbd5e1;
         box-shadow: none;
@@ -296,8 +317,10 @@
           <div class="ca-message ca-bot">${CONFIG.greeting}</div>
         </div>
         <div class="ca-chat-input-area">
+          <button class="ca-attach-btn" id="ca-attach" aria-label="Attach file">📎</button>
           <input type="text" id="ca-input" placeholder="${CONFIG.placeholder}" autocomplete="off" />
           <button class="ca-send-btn" id="ca-send" aria-label="Send message">➤</button>
+          <input type="file" id="ca-file" accept="image/*,.pdf,.docx,.doc,.txt,.md,.csv,.json" style="display:none" />
         </div>
         <div class="ca-powered-by">Powered by AI Calling Agent</div>
       </div>
@@ -308,6 +331,10 @@
     document.getElementById('ca-toggle').addEventListener('click', toggleChat);
     document.getElementById('ca-close').addEventListener('click', toggleChat);
     document.getElementById('ca-send').addEventListener('click', sendMessage);
+    document.getElementById('ca-attach').addEventListener('click', () => {
+      document.getElementById('ca-file').click();
+    });
+    document.getElementById('ca-file').addEventListener('change', handleFileSelect);
     document.getElementById('ca-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
     });
@@ -353,10 +380,45 @@
     if (typing) typing.remove();
   }
 
+  async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+
+    try {
+      let convoId = conversationId;
+      if (!convoId) {
+        const convoRes = await fetch(`${CONFIG.apiUrl}/api/chat/ensure-conversation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId: CONFIG.businessId, channel: 'web' }),
+        });
+        const convoData = await convoRes.json();
+        convoId = convoData.data?.conversationId;
+        conversationId = convoId;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', convoId);
+      const res = await fetch(`${CONFIG.apiUrl}/api/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        pendingAttachment = data.data;
+        addMessage('📎 Attached: ' + file.name, true);
+      } else {
+        addMessage('Upload failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      addMessage('Could not upload the file. Please try again.');
+      console.error('[Calling Agent Widget] Upload error:', error);
+    }
+  }
+
   async function sendMessage() {
     const input = document.getElementById('ca-input');
     const text = input.value.trim();
-    if (!text) return;
+    if (!text && !pendingAttachment) return;
 
     addMessage(text, true);
     input.value = '';
@@ -375,12 +437,14 @@
           conversationId: conversationId,
           message: text,
           channel: 'web',
+          attachmentId: pendingAttachment ? pendingAttachment.id : undefined,
         }),
       });
 
       const data = await response.json();
 
       removeTyping();
+      pendingAttachment = null;
 
       if (data.success && data.data) {
         conversationId = data.data.conversationId;
@@ -390,6 +454,7 @@
       }
     } catch (error) {
       removeTyping();
+      pendingAttachment = null;
       addMessage('Sorry, I could not connect to the server. Please check your connection and try again.');
       console.error('[Calling Agent Widget] Error:', error);
     }
