@@ -1,5 +1,5 @@
 const { groq, GROQ_MODEL } = require('../config/groq');
-const { GEMINI_API_KEY, GEMINI_MODEL } = require('../config/gemini');
+const { GEMINI_API_KEY, GEMINI_MODELS } = require('../config/gemini');
 const prisma = require('../config/db');
 const mammoth = require('mammoth');
 
@@ -78,35 +78,51 @@ class AIService {
     if (!GEMINI_API_KEY) {
       return `[Image file provided. No vision model configured - cannot read image content.]`;
     }
-    try {
-      const body = {
-        contents: [{
-          parts: [
-            { text: 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.' },
-            { inline_data: { mime_type: mimeType || 'image/jpeg', data: buffer.toString('base64') } }
-          ]
-        }]
-      };
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+    const body = {
+      contents: [{
+        parts: [
+          { text: 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.' },
+          { inline_data: { mime_type: mimeType || 'image/jpeg', data: buffer.toString('base64') } }
+        ]
+      }]
+    };
+
+    const models = GEMINI_MODELS.length > 0 ? GEMINI_MODELS : ['gemini-flash-latest'];
+    let lastStatus = 'unknown';
+    for (const model of models) {
+      const attempts = model === models[0] ? 3 : 1;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }
+          );
+          lastStatus = res.status;
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error(`[Gemini Vision] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+            if (res.status === 429 || res.status === 503) {
+              await new Promise((r) => setTimeout(r, 800 * attempt));
+              continue;
+            }
+            break;
+          }
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text.trim();
+          console.error(`[Gemini Vision] ${model} returned empty response`);
+        } catch (error) {
+          console.error(`[Gemini Vision] ${model} Error:`, error.message);
+          lastStatus = 'error';
+          if (attempt < attempts) await new Promise((r) => setTimeout(r, 800 * attempt));
         }
-      );
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error('[Gemini Vision] HTTP', res.status, errText.slice(0, 300));
-        return `[Image file provided but vision API failed (${res.status}).]`;
       }
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      return text ? text.trim() : `[Image file provided but could not be analyzed.]`;
-    } catch (error) {
-      console.error('[Gemini Vision] Error:', error.message);
-      return `[Image file provided but vision API failed.]`;
     }
+    return `[Image file provided but vision API failed (${lastStatus}).]`;
   }
 
   static async extractPdfText(buffer) {
