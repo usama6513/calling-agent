@@ -56,7 +56,7 @@ Always be practical, accurate, and clear. Use simple language that farmers and b
 Always be professional, helpful, and adaptable.`,
 };
 
-const GROQ_SYSTEM_PROMPT = `Always respond in ENGLISH only.`;
+const GROQ_SYSTEM_PROMPT = `LANGUAGE: Auto-detect the user's language and always reply in the SAME language the user writes in. If the user writes in Urdu, reply in Urdu. If English, reply in English. If they mix (Roman Urdu/English), match their style. Never switch to English unless the user writes in English. Keep the detected language consistent throughout the conversation.`;
 
 const SYSTEM_PROMPT_BASE = `You are an AI-powered business assistant for a real business. Your role is to help customers professionally and efficiently.
 
