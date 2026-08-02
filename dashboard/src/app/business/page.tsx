@@ -20,6 +20,7 @@ const businessTypes = [
   { value: 'ecommerce', label: '🛒 E-commerce' },
   { value: 'consulting', label: '💼 Consulting' },
   { value: 'agriculture', label: '🌾 Agriculture' },
+  { value: 'finance', label: '💰 Financial Advisor' },
   { value: 'generic', label: '🏢 Generic Business' },
 ];
 
