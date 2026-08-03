@@ -78,11 +78,31 @@ const TRUSTED_SENDER_HINTS = [/^(VK-SBI|SBI|HDFCBK|ICICIB|AXISBK|KOTAKB|PAYTM|VP
 class FraudScanner {
   static looksLikeSmsOrTranscript(text) {
     if (!text || text.trim().length < 10) return false;
-    const hasSenderLikePrefix = /^(VK-|VM-|AD-|JT-|VD-|SBI|HDFC|ICICI|AXIS|KOTAK|PAYTM|PHPE|JAZZCASH|EASYPAISA)[- ]/i.test(text.trim());
-    const hasQuotes = /["''][^"''\n]{10,}["'']/.test(text);
-    const hasCallPhrases = /(aapke|aapki|aapko|mujhe|mujhko|call.*(aayi|aya|aal)?|phir|bola|bola)|(tum|aap)\b/.test(text);
-    const scamScore = this.score(text);
-    return scamScore.score >= 15 || hasSenderLikePrefix || (hasQuotes && scamScore.score >= 10) || (hasCallPhrases && scamScore.score >= 10);
+    const t = text.trim();
+    const scamScore = this.score(t);
+
+    const hasSenderLikePrefix = /^(VK-|VM-|AD-|JT-|VD-|SBI|HDFC|ICICI|AXIS|KOTAK|PAYTM|PHPE|JAZZCASH|EASYPAISA)[- ]/i.test(t);
+    const hasQuotes = /["''][^"''\n]{10,}["'']/.test(t);
+
+    const isQuestion =
+      /[?？]/.test(t) ||
+      /\b(how|what|when|where|why|which|can|should|is|are|does|do)\b/i.test(t) ||
+      /\b(batao|bataiye|bataye|batana|kaise|kaisa|kya|kyaa|kab|kahan|kitna|kitne|lo|do|dedo|btao|btaiye)\b/i.test(t) ||
+      /\b(chahiye|hona chahiye|karna chahiye|kya karein|kya karun|mujhe batao)\b/i.test(t);
+
+    const reportingIntent =
+      /\b(mujhe|usne|mere|aapke|aapko|ye|yeh|is|ek)\s+(call|sms|message|msg|link|phone|number|email|khat|watsapp|whatsapp)\b/i.test(t) ||
+      /\b(call|sms|message|msg|link|number|email|khat)\b.{0,20}\b(aayi|aaya|aya|mila|mili|aai|aae|bheja|bheji|aata|aati)\b/i.test(t) ||
+      /\b(safe hai|scam hai|scam|fraud|genuine|fake hai|asli|jali|verify karo|check karo|theek hai)\b/i.test(t) ||
+      /\b(bola|bula|bol raha|bol rahi|kehta|kehti|kehe raha|kaha|ne kaha|bata raha|bataya|bataya tha|ne bata)\b/i.test(t) ||
+      /\b(kya ye|kya is|kya yeh)\b.{0,20}\b(safe|scam|asli|jali|fake|genuine)\b/i.test(t);
+
+    if (hasSenderLikePrefix) return true;
+    if (hasQuotes && scamScore.score >= 10) return true;
+    if (reportingIntent && scamScore.score >= 15) return true;
+    if (!isQuestion && scamScore.score >= 40 && t.length <= 300) return true;
+
+    return false;
   }
 
   static score(text) {

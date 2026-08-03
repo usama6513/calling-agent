@@ -111,6 +111,64 @@ Always be professional, helpful, and adaptable.`,
 
 const GROQ_SYSTEM_PROMPT = `LANGUAGE: Auto-detect the user's language and always reply in the SAME language the user writes in. If the user writes in Urdu, reply in Urdu. If English, reply in English. If they mix (Roman Urdu/English), match their style. Never switch to English unless the user writes in English. Keep the detected language consistent throughout the conversation.`;
 
+const URDU_SCRIPT_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+const ROMAN_URDU_WORDS = [
+  'kya', 'hai', 'hain', 'mujhe', 'mujh', 'mera', 'meri', 'mere', 'aap', 'aapko',
+  'aapne', 'aapki', 'aapke', 'tum', 'tumhara', 'tumhari', 'tumhare', 'karo', 'karein',
+  'karna', 'karte', 'karta', 'karti', 'nahi', 'naheen', 'bahut', 'bahot', 'tha',
+  'thi', 'thein', 'hoga', 'hogi', 'honge', 'kaise', 'kaisa', 'kaisi', 'kyun', 'kyo',
+  'batao', 'bataiye', 'bataye', 'batana', 'samjho', 'samjh', 'paisa', 'paise', 'abhi',
+  'aaj', 'kal', 'warna', 'agar', 'lekin', 'magar', 'chahiye', 'chahie', 'apna', 'apni',
+  'apne', 'achha', 'achhi', 'accha', 'theek', 'thik', 'khao', 'khana', 'jaldi', 'fori',
+  'yahan', 'wahan', 'kab', 'kahan', 'kitna', 'kitne', 'bilkul', 'shukriya', 'dhanyavad',
+  'madad', 'kaam', 'kam', 'toh', 'phir', 'fir', 'isliye', 'kyunki', 'kiyoonke',
+  'jayega', 'jaega', 'karega', 'karegi', 'dekh', 'dekho', 'dekhna', 'suna', 'suno',
+  'bol', 'bolo', 'bolna', 'puch', 'pucho', 'puchh', 'woh', 'wo', 'yeh', 'ye', 'us',
+  'unki', 'unka', 'unke', 'is', 'in', 'inhe', 'unhe', 'inhein', 'zaroor', 'sab',
+  'sabse', 'poora', 'poore', 'wala', 'wali', 'sakta', 'sakti', 'sakte', 'dena',
+  'dijiye', 'dedo', 'lijiye', 'laga', 'lagi', 'rakho', 'rakhna', 'kiya', 'kyaa',
+  'kar', 'karne', 'karo', 'baat', 'pata', 'maloom', 'samajh', 'nazar', 'dekhna',
+  'khatam', 'shuru', 'se', 'ko', 'ki', 'ke', 'ka', 'mein', 'main', 'bhi', 'aur',
+  'hota', 'hoti', 'hote', 'hogaya', 'hogayi', 'gaya', 'gayi', 'gai', 'jao', 'jaoge',
+  'karo', 'kriye', 'kijiye', 'aa', 'aya', 'ayi', 'aaya', 'aayi', 'hai', 'hain',
+];
+
+// High-confidence words that almost never appear in English
+const STRONG_URDU_WORDS = [
+  'mujhe', 'mujh', 'mera', 'meri', 'mere', 'aap', 'aapko', 'aapne', 'kya', 'hai',
+  'hain', 'karo', 'karein', 'nahi', 'kyun', 'kyo', 'batao', 'bataiye', 'bataye',
+  'chahiye', 'chahie', 'apna', 'apni', 'apne', 'paisa', 'paise', 'abhi', 'aaj',
+  'warna', 'lekin', 'magar', 'bahut', 'bahot', 'jaldi', 'fori', 'yahan', 'wahan',
+  'kyunki', 'kiyoonke', 'isliye', 'shukriya', 'dhanyavad', 'madad', 'sakta', 'sakti',
+  'sakte', 'jayega', 'jaega', 'karega', 'theek', 'thik', 'accha', 'achha', 'achhi',
+  'samjho', 'samjh', 'bilkul', 'zaroor', 'suna', 'suno', 'bolo', 'bolna', 'puchh',
+  'woh', 'yeh', 'unhein', 'inhein', 'kaise', 'kaisa', 'kaisi', 'kitna', 'kitne',
+  'kahan', 'kab', 'khatam', 'shuru', 'kijiye', 'khana', 'dekho', 'dekhna', 'tumhara',
+  'tumhari', 'tumhare', 'naheen', 'kiya', 'kyaa', 'hota', 'hoti', 'hote', 'rakhna',
+];
+
+function detectLanguage(text) {
+  if (!text) return 'english';
+  const t = String(text).trim();
+  if (!t) return 'english';
+
+  if (URDU_SCRIPT_RE.test(t)) return 'urdu';
+
+  const words = t.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'english';
+
+  const strongMatches = words.filter((w) => STRONG_URDU_WORDS.includes(w)).length;
+  if (strongMatches >= 2) return 'urdu';
+  if (strongMatches === 1 && words.length <= 6) return 'urdu';
+
+  const allMatches = words.filter((w) => ROMAN_URDU_WORDS.includes(w)).length;
+  const ratio = allMatches / words.length;
+  if (ratio >= 0.18) return 'urdu';
+
+  return 'english';
+}
+
 const SYSTEM_PROMPT_BASE = `You are an AI-powered business assistant for a real business. Your role is to help customers professionally and efficiently.
 
 CORE RULES:
@@ -248,7 +306,7 @@ class AIService {
     return str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
   }
 
-  static buildSystemPrompt(business, channel = 'web') {
+  static buildSystemPrompt(business, channel = 'web', userLanguage = 'auto') {
     const typePrompt = BUSINESS_TYPE_PROMPTS[business.type] || BUSINESS_TYPE_PROMPTS.generic;
 
     let knowledgeContext = '';
@@ -285,7 +343,14 @@ class AIService {
       ? '\n\nCHANNEL: WhatsApp - You can use emojis moderately. Keep messages readable.'
       : '\n\nCHANNEL: Web Chat - You can use formatting for clarity.';
 
-    return `${SYSTEM_PROMPT_BASE}\n\n${GROQ_SYSTEM_PROMPT}\n\n${typePrompt}\n\nBUSINESS: ${business.name}${knowledgeContext}${rulesContext}${infoContext}${hoursContext}${channelContext}`;
+    let languageContext = GROQ_SYSTEM_PROMPT;
+    if (userLanguage === 'urdu') {
+      languageContext = `LANGUAGE: The user is writing in URDU (Urdu script or Roman Urdu). You MUST reply in URDU ONLY. Use the same script the user used (if they wrote Roman Urdu, reply in Roman Urdu; if pure Urdu script, reply in Urdu script). Do NOT reply in English. Keep the Urdu consistent throughout the conversation.`;
+    } else if (userLanguage === 'english') {
+      languageContext = `LANGUAGE: The user is writing in ENGLISH. You MUST reply in ENGLISH ONLY. Do NOT reply in Urdu, Hindi, or Roman Urdu, even if some earlier messages were in another language. Keep the English consistent throughout the conversation.`;
+    }
+
+    return `${SYSTEM_PROMPT_BASE}\n\n${languageContext}\n\n${typePrompt}\n\nBUSINESS: ${business.name}${knowledgeContext}${rulesContext}${infoContext}${hoursContext}${channelContext}`;
   }
 
   static async getConversationHistory(conversationId, limit = 8) {
@@ -350,7 +415,8 @@ class AIService {
     });
 
     const history = await this.getConversationHistory(conversation.id);
-    const systemPrompt = this.buildSystemPrompt(business, channel);
+    const userLanguage = detectLanguage(userMessage);
+    const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage);
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -432,7 +498,8 @@ class AIService {
   }
 
   static async generateResponse(business, prompt, context = '') {
-    const systemPrompt = this.buildSystemPrompt(business, 'web');
+    const userLanguage = detectLanguage(prompt);
+    const systemPrompt = this.buildSystemPrompt(business, 'web', userLanguage);
 
     const messages = [
       { role: 'system', content: systemPrompt },
