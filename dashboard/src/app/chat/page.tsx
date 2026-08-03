@@ -162,7 +162,7 @@ export default function ChatPage() {
       };
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
         if (blob.size > 0) await sendVoiceMessage(blob);
       };
       recorder.start();

@@ -121,6 +121,7 @@ Always be professional, helpful, and adaptable.`,
 const GROQ_SYSTEM_PROMPT = `LANGUAGE: Auto-detect the user's language and always reply in the SAME language the user writes in. If the user writes in Urdu, reply in Urdu. If English, reply in English. If they mix (Roman Urdu/English), match their style. Never switch to English unless the user writes in English. Keep the detected language consistent throughout the conversation.`;
 
 const URDU_SCRIPT_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const DEVANAGARI_RE = /[\u0900-\u097F]/;
 
 const ROMAN_URDU_WORDS = [
   'kya', 'hai', 'hain', 'mujhe', 'mujh', 'mera', 'meri', 'mere', 'aap', 'aapko',
@@ -163,6 +164,7 @@ function detectLanguage(text) {
   if (!t) return 'english';
 
   if (URDU_SCRIPT_RE.test(t)) return 'urdu';
+  if (DEVANAGARI_RE.test(t)) return 'urdu';
 
   const words = t.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(Boolean);
   if (words.length === 0) return 'english';
@@ -349,14 +351,14 @@ class AIService {
     const channelContext = channel === 'phone'
       ? '\n\nCHANNEL: Phone Call - Keep responses natural for voice. Be concise. Avoid bullet points and long lists. Use short, easy-to-pronounce sentences.'
       : channel === 'voice'
-      ? '\n\nCHANNEL: Voice (speech only) - The user is speaking to you and your answer will be READ ALOUD by a text-to-speech system. Requirements: 1) Keep the answer SHORT (under 90 words when possible). 2) Use plain conversational speech - NO bullet points, NO numbered lists, NO markdown, NO asterisks, NO emojis, NO URLs. 3) Use short, natural, easy-to-pronounce sentences. 4) Speak like a real person on a call. 5) If there are multiple steps, say "First..." then "Second..." in normal spoken words. 6) Never reveal that you are an AI - just sound natural and helpful.'
+      ? '\n\nCHANNEL: Voice (speech only) - The user is speaking to you and your answer will be READ ALOUD by a text-to-speech system. Requirements: 1) Keep the answer SHORT (under 90 words when possible). 2) Use plain conversational speech - NO bullet points, NO numbered lists, NO markdown, NO asterisks, NO emojis, NO URLs. 3) Use short, natural, easy-to-pronounce sentences. 4) Speak like a real person on a call. 5) If there are multiple steps, say "First..." then "Second..." in normal spoken words. 6) Never reveal that you are an AI - just sound natural and helpful. 7) If replying in Urdu, use proper PAKISTANI URDU - never Hindi/Hindustani vocabulary, never Devanagari script, use words like chahiye, karein, bataen, madad, paisa.'
       : channel === 'whatsapp'
       ? '\n\nCHANNEL: WhatsApp - You can use emojis moderately. Keep messages readable.'
       : '\n\nCHANNEL: Web Chat - You can use formatting for clarity.';
 
     let languageContext = GROQ_SYSTEM_PROMPT;
     if (userLanguage === 'urdu') {
-      languageContext = `LANGUAGE: The user is writing in URDU (Urdu script or Roman Urdu). You MUST reply in URDU ONLY. Use the same script the user used (if they wrote Roman Urdu, reply in Roman Urdu; if pure Urdu script, reply in Urdu script). Do NOT reply in English. Keep the Urdu consistent throughout the conversation.`;
+      languageContext = `LANGUAGE: The user is speaking/writing in URDU (Urdu script or Roman Urdu). You MUST reply in URDU ONLY. Use the same script the user used (if they wrote Roman Urdu, reply in Roman Urdu; if pure Urdu script, reply in Urdu script). Do NOT reply in English. Use proper PAKISTANI URDU vocabulary and pronunciation - NEVER use Hindi/Hindustani words, Hindi script (Devanagari), or Bollywood-style Hindi expressions. Use words natural to Pakistan (e.g. 'chahiye', 'karein', 'bataen', 'madad', 'paisa', 'akhrajat'). Keep the Urdu consistent throughout the conversation.`;
     } else if (userLanguage === 'english') {
       languageContext = `LANGUAGE: The user is writing in ENGLISH. You MUST reply in ENGLISH ONLY. Do NOT reply in Urdu, Hindi, or Roman Urdu, even if some earlier messages were in another language. Keep the English consistent throughout the conversation.`;
     }
