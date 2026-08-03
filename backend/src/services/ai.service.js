@@ -348,6 +348,8 @@ class AIService {
 
     const channelContext = channel === 'phone'
       ? '\n\nCHANNEL: Phone Call - Keep responses natural for voice. Be concise. Avoid bullet points and long lists. Use short, easy-to-pronounce sentences.'
+      : channel === 'voice'
+      ? '\n\nCHANNEL: Voice (speech only) - The user is speaking to you and your answer will be READ ALOUD by a text-to-speech system. Requirements: 1) Keep the answer SHORT (under 90 words when possible). 2) Use plain conversational speech - NO bullet points, NO numbered lists, NO markdown, NO asterisks, NO emojis, NO URLs. 3) Use short, natural, easy-to-pronounce sentences. 4) Speak like a real person on a call. 5) If there are multiple steps, say "First..." then "Second..." in normal spoken words. 6) Never reveal that you are an AI - just sound natural and helpful.'
       : channel === 'whatsapp'
       ? '\n\nCHANNEL: WhatsApp - You can use emojis moderately. Keep messages readable.'
       : '\n\nCHANNEL: Web Chat - You can use formatting for clarity.';

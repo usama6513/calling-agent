@@ -29,6 +29,10 @@
   let conversationId = null;
   let isOpen = false;
   let pendingAttachment = null;
+  let isRecording = false;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let mediaStream = null;
 
   const themeColors = {
     blue: { primary: '#2563eb', hover: '#1d4ed8', light: '#eff6ff', gradient: 'linear-gradient(135deg, #2563eb, #4f46e5)' },
@@ -181,6 +185,85 @@
         border-bottom-right-radius: 4px;
       }
 
+      .ca-message.ca-voice {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+      }
+
+      .ca-voice-play {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: ${colors.gradient};
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+      }
+
+      .ca-voice-play:hover {
+        transform: scale(1.08);
+      }
+
+      .ca-voice-wave {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        height: 20px;
+      }
+
+      .ca-voice-wave span {
+        width: 3px;
+        border-radius: 2px;
+        background: ${colors.primary};
+        height: 6px;
+      }
+
+      .ca-voice-label {
+        font-size: 11px;
+        color: #64748b;
+        margin-left: 4px;
+      }
+
+      .ca-mic-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: transform 0.2s, background 0.2s;
+        background: transparent;
+        color: #64748b;
+      }
+
+      .ca-mic-btn:hover {
+        background: #f1f5f9;
+        transform: scale(1.05);
+      }
+
+      .ca-mic-btn.ca-recording {
+        background: #ef4444;
+        color: white;
+        animation: ca-pulse 1s infinite;
+      }
+
+      @keyframes ca-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      }
+
       .ca-message.ca-typing {
         background: white;
         color: #666;
@@ -319,10 +402,12 @@
         <div class="ca-chat-input-area">
           <button class="ca-attach-btn" id="ca-attach" aria-label="Attach file">📎</button>
           <input type="text" id="ca-input" placeholder="${CONFIG.placeholder}" autocomplete="off" />
+          <button class="ca-mic-btn" id="ca-mic" aria-label="Voice message">🎤</button>
           <button class="ca-send-btn" id="ca-send" aria-label="Send message">➤</button>
           <input type="file" id="ca-file" accept="image/*,.pdf,.docx,.doc,.txt,.md,.csv,.json" style="display:none" />
         </div>
         <div class="ca-powered-by">Powered by AI Calling Agent</div>
+        <audio id="ca-audio" style="display:none"></audio>
       </div>
     `;
 
@@ -331,6 +416,7 @@
     document.getElementById('ca-toggle').addEventListener('click', toggleChat);
     document.getElementById('ca-close').addEventListener('click', toggleChat);
     document.getElementById('ca-send').addEventListener('click', sendMessage);
+    document.getElementById('ca-mic').addEventListener('click', toggleVoiceInput);
     document.getElementById('ca-attach').addEventListener('click', () => {
       document.getElementById('ca-file').click();
     });
@@ -363,6 +449,137 @@
     messages.appendChild(msg);
     messages.scrollTop = messages.scrollHeight;
     return msg;
+  }
+
+  function addVoiceNote(audioUrl) {
+    const messages = document.getElementById('ca-messages');
+    const msg = document.createElement('div');
+    msg.className = 'ca-message ca-bot ca-voice';
+    msg.innerHTML = `
+      <button class="ca-voice-play" title="Play">▶</button>
+      <div class="ca-voice-wave">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span class="ca-voice-label">Voice reply</span>
+    `;
+    const audio = document.getElementById('ca-audio');
+    const playBtn = msg.querySelector('.ca-voice-play');
+    const isPlaying = () => !audio.paused && audio.src === audioUrl;
+    playBtn.addEventListener('click', () => {
+      if (isPlaying()) {
+        audio.pause();
+        playBtn.textContent = '▶';
+      } else {
+        audio.src = audioUrl;
+        audio.play();
+        playBtn.textContent = '⏸';
+        audio.onended = () => { playBtn.textContent = '▶'; };
+      }
+    });
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+    return msg;
+  }
+
+  async function toggleVoiceInput() {
+    const micBtn = document.getElementById('ca-mic');
+    if (isRecording) {
+      mediaRecorder?.state === 'recording' && mediaRecorder.stop();
+      isRecording = false;
+      micBtn.classList.remove('ca-recording');
+      micBtn.textContent = '🎤';
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      addMessage('Voice recording is not supported in this browser. Use Chrome, Edge, or Firefox.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream = stream;
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunks.push(event.data);
+      };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        if (blob.size > 0) await sendVoiceMessage(blob);
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      micBtn.classList.add('ca-recording');
+      micBtn.textContent = '⏹';
+    } catch {
+      addMessage('Microphone access was denied.');
+    }
+  }
+
+  async function transcribeAudio(blob) {
+    const formData = new FormData();
+    formData.append('audio', blob, 'voice.webm');
+    const res = await fetch(`${CONFIG.apiUrl}/api/voice/transcribe`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!data.success || !data.data?.text) throw new Error('Transcription failed');
+    return data.data.text;
+  }
+
+  async function synthesizeAudio(text) {
+    const res = await fetch(`${CONFIG.apiUrl}/api/voice/synthesize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error('Synthesis failed');
+    return URL.createObjectURL(await res.blob());
+  }
+
+  async function sendVoiceMessage(blob) {
+    const sendBtn = document.getElementById('ca-send');
+    sendBtn.disabled = true;
+    try {
+      const transcript = await transcribeAudio(blob);
+      if (!transcript.trim()) {
+        addMessage('Sorry, I could not hear you. Please try again.');
+        sendBtn.disabled = false;
+        return;
+      }
+      addMessage('🎤 ' + transcript, true);
+      showTyping();
+      const response = await fetch(`${CONFIG.apiUrl}/api/chat/voice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: CONFIG.businessId,
+          conversationId: conversationId,
+          speechInput: transcript,
+          channel: 'voice',
+        }),
+      });
+      const data = await response.json();
+      removeTyping();
+      if (data.success && data.data) {
+        conversationId = data.data.conversationId;
+        try {
+          const audioUrl = await synthesizeAudio(data.data.message);
+          addVoiceNote(audioUrl);
+          document.getElementById('ca-audio').play();
+        } catch {
+          addMessage(data.data.message);
+        }
+      } else {
+        addMessage('Sorry, I encountered an error. Please try again.');
+      }
+    } catch (error) {
+      removeTyping();
+      addMessage('Sorry, I could not process your voice message.');
+      console.error('[Calling Agent Widget] Voice error:', error);
+    }
+    sendBtn.disabled = false;
   }
 
   function showTyping() {

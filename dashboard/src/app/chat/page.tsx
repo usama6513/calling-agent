@@ -15,6 +15,8 @@ interface Message {
   content: string;
   timestamp: string;
   attachment?: Attachment;
+  voiceNote?: boolean;
+  audioUrl?: string;
 }
 
 interface Business {
@@ -39,6 +41,9 @@ export default function ChatPage() {
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     fetchBusinesses();
@@ -131,7 +136,6 @@ export default function ChatPage() {
       if (data.success) {
         setConversationId(data.data.conversationId);
         setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString() }]);
-        speakText(data.data.message);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date().toISOString() }]);
       }
@@ -141,27 +145,109 @@ export default function ChatPage() {
     setLoading(false);
   };
 
-  const startVoiceInput = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert('Voice input not supported. Use Chrome browser.');
+  const startVoiceInput = async () => {
+    if (isRecording) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      alert('Voice recording not supported in this browser. Use Chrome, Edge, or Firefox.');
       return;
     }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = false;
-    recognitionRef.current.lang = 'en-US';
-    recognitionRef.current.onresult = (event: any) => {
-      setInput(event.results[0][0].transcript);
-      setIsRecording(false);
-    };
-    recognitionRef.current.onerror = () => setIsRecording(false);
-    recognitionRef.current.onend = () => setIsRecording(false);
-    recognitionRef.current.start();
-    setIsRecording(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (blob.size > 0) await sendVoiceMessage(blob);
+      };
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      alert('Microphone access denied.');
+    }
   };
 
-  const stopVoiceInput = () => { recognitionRef.current?.stop(); setIsRecording(false); };
+  const stopVoiceInput = () => {
+    mediaRecorderRef.current?.state === 'recording' && mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
+
+  const transcribeAudio = async (blob: Blob) => {
+    const formData = new FormData();
+    formData.append('audio', blob, 'voice.webm');
+    const res = await fetch('https://backend-seven-chi-71.vercel.app/api/voice/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!data.success || !data.data?.text) throw new Error('Transcription failed');
+    return data.data.text;
+  };
+
+  const synthesizeAudio = async (text: string) => {
+    const res = await fetch('https://backend-seven-chi-71.vercel.app/api/voice/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error('Synthesis failed');
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  };
+
+  const sendVoiceMessage = async (blob: Blob) => {
+    if (!selectedBusiness || loading) return;
+    setLoading(true);
+    try {
+      const transcript = await transcribeAudio(blob);
+      if (!transcript.trim()) {
+        setLoading(false);
+        return;
+      }
+      setMessages((prev) => [...prev, { role: 'user', content: `🎤 ${transcript}`, timestamp: new Date().toISOString() }]);
+
+      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/chat/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: selectedBusiness,
+          conversationId,
+          speechInput: transcript,
+          channel: 'voice',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setConversationId(data.data.conversationId);
+        try {
+          const audioUrl = await synthesizeAudio(data.data.message);
+          setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString(), voiceNote: true, audioUrl }]);
+          setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.src = audioUrl;
+              audioRef.current.onplay = () => setIsSpeaking(true);
+              audioRef.current.onended = () => setIsSpeaking(false);
+              audioRef.current.play().catch(() => {});
+            }
+          }, 300);
+        } catch {
+          setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString() }]);
+        }
+      } else {
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date().toISOString() }]);
+      }
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Could not process your voice. Please try again.', timestamp: new Date().toISOString() }]);
+    }
+    setLoading(false);
+  };
+
+  const stopSpeaking = () => { synthRef.current?.cancel(); setIsSpeaking(false); };
 
   const speakText = (text: string) => {
     if (!synthRef.current) return;
@@ -177,8 +263,6 @@ export default function ChatPage() {
     utterance.onerror = () => setIsSpeaking(false);
     synthRef.current.speak(utterance);
   };
-
-  const stopSpeaking = () => { synthRef.current?.cancel(); setIsSpeaking(false); };
 
   const clearChat = () => { setMessages([]); setConversationId(null); stopSpeaking(); };
 
@@ -273,13 +357,40 @@ export default function ChatPage() {
                       )}
                     </div>
                   )}
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  {msg.voiceNote ? (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => {
+                          if (audioRef.current && audioRef.current.src === msg.audioUrl) {
+                            if (audioRef.current.paused) audioRef.current.play();
+                            else audioRef.current.pause();
+                          } else {
+                            if (audioRef.current) { audioRef.current.src = msg.audioUrl || ''; audioRef.current.play(); }
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-md hover:scale-105 transition-transform"
+                        title="Play voice reply"
+                      >
+                        ▶
+                      </button>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-8 h-2 bg-blue-200 rounded-full overflow-hidden">
+                            <div className="h-full w-full bg-blue-500 rounded-full animate-pulse"></div>
+                          </div>
+                          <span className="text-xs text-gray-500 font-medium">Voice reply</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-1.5 px-1">
                   <p className={`text-xs ${msg.role === 'user' ? 'text-right text-gray-400 flex-1' : 'text-gray-400'}`}>
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
-                  {msg.role === 'assistant' && (
+                  {msg.role === 'assistant' && !msg.voiceNote && (
                     <button
                       onClick={() => speakText(msg.content)}
                       className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
@@ -409,7 +520,7 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
-      <audio ref={audioRef} style={{ display: 'none' }} />
+      <audio ref={audioRef} style={{ display: 'none' }} controls={false} onEnded={() => setIsSpeaking(false)} />
     </div>
   );
 }
