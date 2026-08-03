@@ -3,6 +3,7 @@ const { GEMINI_API_KEY, GEMINI_MODELS } = require('../config/gemini');
 const prisma = require('../config/db');
 const mammoth = require('mammoth');
 const URLScanner = require('./url-scanner.service');
+const FraudScanner = require('./fraud-scanner.service');
 
 const BUSINESS_TYPE_PROMPTS = {
   restaurant: `You are an AI receptionist for a restaurant. You can:
@@ -46,6 +47,7 @@ Always be professional, insightful, and value-driven.`,
 - What agriculture can provide (food, jobs, exports, raw materials, sustainability)
 - Irrigation, water management, and modern farming techniques
 - Livestock, organic farming, and sustainable agriculture
+- IMAGE ANALYSIS: When the user attaches an image of a leaf, plant, crop, fruit, soil, or any farm scene, use the A VISION AI description in the context to: 1) identify the crop/plant, 2) detect any disease or pest problem and its symptoms, 3) explain the benefits of that crop, and 4) give clear step-by-step prevention and treatment solutions. Reassure the farmer and suggest confirming with a local agriculture officer if unsure.
 Always be practical, accurate, and clear. Use simple language that farmers and beginners can understand. Give step-by-step guidance when relevant.`,
 
   finance: `You are a comprehensive AI Financial Education, Fraud Detection, and Smart Budgeting expert. You help with EVERY aspect of personal and business finance.
@@ -70,6 +72,7 @@ FRAUD DETECTION (full knowledge of all scams):
 - How to verify legitimacy: official channels, never share OTP/PIN/CVV, verify caller identity independently
 - Red flags of suspicious transactions and unusual account activity
 - URL/link safety analysis: when a URL is provided, use the URL safety scan report to warn about phishing/scam links, fake login pages, and suspicious domains. Explain warning signs and advise the user what to do.
+- SMS and VOICE CALL analysis: when the user pastes an SMS or describes/transcribes a phone call, use the FRAUD SCAN REPORT in the context to give a clear verdict (safe/suspicious/scam). Identify the exact scam technique (phishing, vishing, smishing, lottery scam, fake refund, courier scam, etc.) and give step-by-step instructions on what to do and what NOT to do (never share OTP/PIN/CVV/MPIN, never transfer money, verify on official channels, report the scam).
 
 SMART BUDGETING (full knowledge):
 - How to build a monthly budget from income and expenses
@@ -124,14 +127,14 @@ CORE RULES:
 IMPORTANT: You are representing a real business. Be accurate and reliable.`;
 
 class AIService {
-  static async describeImage(buffer, mimeType, filename) {
+  static async describeImage(buffer, mimeType, filename, promptOverride = null) {
     if (!GEMINI_API_KEY) {
       return `[Image file provided. No vision model configured - cannot read image content.]`;
     }
     const body = {
       contents: [{
         parts: [
-          { text: 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.' },
+          { text: promptOverride || 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.' },
           { inline_data: { mime_type: mimeType || 'image/jpeg', data: buffer.toString('base64') } }
         ]
       }]
@@ -198,17 +201,17 @@ class AIService {
     }
   }
 
-  static async extractFileText(attachment) {
+  static async extractFileText(attachment, businessType = null) {
     const buffer = attachment.data;
     const mime = attachment.mimeType || '';
     const name = (attachment.filename || '').toLowerCase();
 
-    if (mime.includes('pdf') || name.endsWith('.pdf')) {
+    if (mime.includes('pdf')) {
       const text = await this.extractPdfText(buffer);
       return `[Attachment: ${attachment.filename} (PDF)]\n${text}`;
     }
 
-    if (mime.includes('docx') || name.endsWith('.docx')) {
+    if (mime.includes('docx')) {
       const result = await mammoth.extractRawText({ buffer });
       return `[Attachment: ${attachment.filename} (DOCX)]\n${result.value}`;
     }
@@ -219,7 +222,10 @@ class AIService {
     }
 
     if (mime.startsWith('image/')) {
-      const description = await this.describeImage(buffer, mime, attachment.filename);
+      const promptOverride = businessType === 'agriculture'
+        ? 'You are an expert agricultural analyst. Examine this image carefully. Identify: 1) What crop, plant, leaf, fruit, or soil is shown (or what farming scene). 2) If it is a leaf/plant with any disease, name the likely disease(s), symptoms visible, and pest/disease causes. 3) If it is soil, describe its likely type, color, moisture, and what it indicates. 4) List the benefits of this crop if identifiable. 5) Give practical prevention and treatment solutions a farmer can follow. Be specific and practical for farmers.'
+        : 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.';
+      const description = await this.describeImage(buffer, mime, attachment.filename, promptOverride);
       return `[Attachment: ${attachment.filename} (Image: ${mime})]\nIMAGE DESCRIPTION:\n${description}`;
     }
 
@@ -328,7 +334,7 @@ class AIService {
       });
       if (attachment) {
         const isImage = (attachment.mimeType || '').startsWith('image/');
-        const fileText = await this.extractFileText(attachment);
+        const fileText = await this.extractFileText(attachment, business.type);
         attachmentContext = isImage
           ? `\n\nUSER ATTACHED AN IMAGE. A VISION AI has already analyzed it and here is the accurate description of what the image shows:\n${fileText}`
           : `\n\nUSER ATTACHED A FILE — READ IT CAREFULLY:\n${fileText}`;
@@ -368,6 +374,17 @@ class AIService {
       }
       const urlScanContext = `\n\nURL SAFETY SCAN REPORT (the system scanned these URLs automatically):\n${JSON.stringify(reports, null, 2)}\n\nIf the user asked about one of these URLs, use the scan report above to give a clear verdict (safe / suspicious / scam). Explain the warning signs found and advise what to do. Reply in the user's language.`;
       messages.push({ role: 'system', content: urlScanContext });
+    }
+
+    const isFinance = business.type === 'finance';
+    if (isFinance && FraudScanner.looksLikeSmsOrTranscript(userMessage)) {
+      try {
+        const fraudReport = await FraudScanner.scan(userMessage);
+        const fraudContext = `\n\nFRAUD SCAN REPORT (the system analyzed this message as a possible SMS / voice call transcript):\n${JSON.stringify(fraudReport, null, 2)}\n\nUse this report to give a clear verdict (safe / suspicious / scam). Point out the exact scam indicators and tell the user what to do (e.g. do not share OTP/PIN, contact bank on official number, report the scam). Reply in the user's language.`;
+        messages.push({ role: 'system', content: fraudContext });
+      } catch (error) {
+        console.error('[Fraud Scan] Error:', error.message);
+      }
     }
 
     messages.push(...history);
