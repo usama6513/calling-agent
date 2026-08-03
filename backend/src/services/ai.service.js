@@ -74,6 +74,15 @@ FRAUD DETECTION (full knowledge of all scams):
 - URL/link safety analysis: when a URL is provided, use the URL safety scan report to warn about phishing/scam links, fake login pages, and suspicious domains. Explain warning signs and advise the user what to do.
 - SMS and VOICE CALL analysis: when the user pastes an SMS or describes/transcribes a phone call, use the FRAUD SCAN REPORT in the context to give a clear verdict (safe/suspicious/scam). Identify the exact scam technique (phishing, vishing, smishing, lottery scam, fake refund, courier scam, etc.) and give step-by-step instructions on what to do and what NOT to do (never share OTP/PIN/CVV/MPIN, never transfer money, verify on official channels, report the scam).
 
+FRAUD REPORTING KNOWLEDGE (use this when a scam is confirmed and the user needs to file a complaint):
+- Bank fraud: call the bank's official helpline printed on the card/statement, block the card immediately (bank app or helpline), report the fraud transaction.
+- Pakistan FIA National Response Centre for Cyber Crime (NR3C): file complaint online at https://complaint.fia.gov.pk or call 1991; provide the scammer's number, message content, and screenshots.
+- Pakistan Telecommunication Authority (PTA): report scam SMS/calls at https://complaint.pta.gov.pk or forward the scam SMS text to 8000 (free for mobile users).
+- Police: visit the nearest police station to file a formal report (FIR); keep call logs, SMS screenshots, and bank transaction records as evidence.
+- If money was already sent: immediately call the bank to try to freeze/recall the transaction, then file complaints at the bank, FIA, and police.
+- State Bank of Pakistan Banking Mohtasib (SBP-BM): escalate unresolved bank complaints at http://www.bankingmohtasib.org.pk/ or via SBP Helpline 021-111-727-272.
+- For other countries use that country's equivalents: e.g. in India report to 1930 (cyber crime helpline) and https://cybercrime.gov.in; in the US use ic3.gov and the FTC at reportfraud.ftc.gov; in the UK use Action Fraud at actionfraud.police.uk.
+
 SMART BUDGETING (full knowledge):
 - How to build a monthly budget from income and expenses
 - 50/30/20 rule (needs/wants/savings) and other budgeting methods
@@ -446,7 +455,7 @@ class AIService {
     if (isFinance && FraudScanner.looksLikeSmsOrTranscript(userMessage)) {
       try {
         const fraudReport = await FraudScanner.scan(userMessage);
-        const fraudContext = `\n\nFRAUD SCAN REPORT (the system analyzed this message as a possible SMS / voice call transcript):\n${JSON.stringify(fraudReport, null, 2)}\n\nUse this report to give a clear verdict (safe / suspicious / scam). Point out the exact scam indicators and tell the user what to do (e.g. do not share OTP/PIN, contact bank on official number, report the scam). Reply in the user's language.`;
+        const fraudContext = `\n\nFRAUD SCAN REPORT (the system analyzed this message as a possible SMS / voice call transcript):\n${JSON.stringify(fraudReport, null, 2)}\n\nUse this report to give a clear verdict (safe / suspicious / scam). Reply in the user's language.\n\nIf the verdict is high_risk or medium_risk (a real scam/suspicious case), your answer MUST include ALL of these:\n1) CLEAR VERDICT - state clearly this is a scam/fraud and why (list the exact warning signs found).\n2) DO NOT DO - what the user must NOT do right now (never share OTP/PIN/CVV/MPIN, never transfer money, never call the number in the message, do not install any app).\n3) IMMEDIATE ACTIONS - what the user should do right now (block the sender, don't click the link, screenshot and save evidence, change passwords if already shared).\n4) WHERE TO REPORT - the proper places to file a complaint with details:\n   - Bank: call the bank's official helpline number (printed on the card/statement) and report fraud; block the card via the bank app or helpline.\n   - Pakistan FIA National Response Centre for Cyber Crime (NR3C): report at https://complaint.fia.gov.pk or call 1991 (from a mobile) - give incident details, phone number, screenshots.\n   - Pakistan Telecommunication Authority (PTA): report scam SMS/calls via PTA Complaints Portal https://complaint.pta.gov.pk or send the SMS text to 8000 for mobile phone users.\n   - Police: file a formal complaint/report (FIR) at the nearest police station; keep the call/SMS records as evidence.\n   - If money was already transferred: immediately call the bank and ask to freeze/recall the transaction, then file a complaint.\n   - For crypto/payment app scams also report to the app's official support and the State Bank of Pakistan Banking Mohtasib if bank-related.\n5) BEST PROTECTION - the best ways to avoid this scam in future (never trust unsolicited calls/SMS, verify on official channels, never share OTP, install trusted security apps, enable two-factor authentication, block unknown callers).\n6) REASSURE - end with a reassuring note that they did the right thing by checking with you and they are not alone; this is a very common scam.\n\nKeep the structure clear and easy to follow, using short sections. Reply in the same language the user used.`;
         messages.push({ role: 'system', content: fraudContext });
       } catch (error) {
         console.error('[Fraud Scan] Error:', error.message);
@@ -457,7 +466,10 @@ class AIService {
 
     const model = business.aiModel || GROQ_MODEL;
     const temperature = business.temperature ?? 0.7;
-    const maxTokens = business.maxTokens ?? 600;
+    let maxTokens = business.maxTokens ?? 600;
+    if (maxTokens < 1400 && messages.some((m) => m.role === 'system' && m.content.startsWith('\n\nFRAUD SCAN REPORT'))) {
+      maxTokens = 1400;
+    }
 
     const callGroq = async (tokenLimit) => {
       return groq.chat.completions.create({
