@@ -104,10 +104,13 @@ function splitText(text, maxLen = 180) {
   return chunks;
 }
 
+const googleAgent = new https.Agent({ keepAlive: true, maxSockets: 10 });
+
 function googleTts(text, language) {
   return new Promise((resolve, reject) => {
     const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${language}&client=tw-ob&ttsspeed=1.3`;
     const options = {
+      agent: googleAgent,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://translate.google.com/',
@@ -127,8 +130,18 @@ function googleTts(text, language) {
   });
 }
 
-router.post('/synthesize', asyncHandler(async (req, res) => {
-  const { text, lang } = req.body;
+const ttsCache = new Map();
+const TTS_CACHE_MAX = 200;
+
+function getSynthesizeInput(req) {
+  if (req.method === 'GET') {
+    return { text: req.query.text, lang: req.query.lang };
+  }
+  return { text: req.body.text, lang: req.body.lang };
+}
+
+async function handleSynthesize(req, res) {
+  const { text, lang } = getSynthesizeInput(req);
 
   if (!text) {
     return res.status(400).json({ success: false, error: 'Text is required' });
@@ -137,33 +150,71 @@ router.post('/synthesize', asyncHandler(async (req, res) => {
   const language = lang || detectTtsLang(text);
   const chunks = splitText(text);
 
-  try {
-    const buffers = [];
-    for (const chunk of chunks) {
-      try {
-        const buf = await googleTts(chunk, language);
-        if (buf.length > 1000) buffers.push(buf);
-      } catch (err) {
-        console.error(`TTS chunk failed (${language}):`, err.message);
-      }
-    }
-
-    if (buffers.length === 0) {
-      return res.status(502).json({ success: false, error: 'TTS generation failed' });
-    }
-
-    const combined = Buffer.concat(buffers);
+  const cacheKey = `${language}:${chunks.join('|')}`;
+  const cached = ttsCache.get(cacheKey);
+  if (cached) {
     res.set({
       'Content-Type': 'audio/mpeg',
       'Cache-Control': 'no-cache',
       'Access-Control-Allow-Origin': '*',
-      'Content-Length': combined.length,
+      'Content-Length': cached.length,
     });
-    res.send(combined);
+    return res.send(cached);
+  }
+
+  res.set({
+    'Content-Type': 'audio/mpeg',
+    'Cache-Control': 'no-cache',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.flushHeaders();
+
+  const buffers = [];
+
+  try {
+    if (chunks.length > 0) {
+      const first = await googleTts(chunks[0], language);
+      if (first.length > 1000) {
+        buffers.push(first);
+        res.write(first);
+      }
+    }
+
+    const restResults = await Promise.all(chunks.slice(1).map(async (chunk) => {
+      try {
+        const buf = await googleTts(chunk, language);
+        return buf.length > 1000 ? buf : null;
+      } catch (err) {
+        console.error(`TTS chunk failed (${language}):`, err.message);
+        return null;
+      }
+    }));
+
+    for (const buf of restResults) {
+      if (buf) {
+        buffers.push(buf);
+        res.write(buf);
+      }
+    }
+
+    res.end();
+    if (buffers.length > 0) {
+      ttsCache.set(cacheKey, Buffer.concat(buffers));
+      if (ttsCache.size > TTS_CACHE_MAX) {
+        const firstKey = ttsCache.keys().next().value;
+        ttsCache.delete(firstKey);
+      }
+    }
   } catch (error) {
     console.error('TTS error:', error.message);
-    res.status(500).json({ success: false, error: 'TTS generation failed' });
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, error: 'TTS generation failed' });
+    }
+    res.end();
   }
-}));
+}
+
+router.get('/synthesize', asyncHandler(handleSynthesize));
+router.post('/synthesize', asyncHandler(handleSynthesize));
 
 module.exports = router;

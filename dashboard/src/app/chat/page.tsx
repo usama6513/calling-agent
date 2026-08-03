@@ -253,11 +253,11 @@ export default function ChatPage() {
 
   const playServerAudio = async (text: string) => {
     try {
-      const audioUrl = await synthesizeAudio(text);
       if (audioRef.current) {
-        audioRef.current.src = audioUrl;
+        audioRef.current.src = `https://backend-seven-chi-71.vercel.app/api/voice/synthesize?text=${encodeURIComponent(text)}`;
         audioRef.current.onplay = () => setIsSpeaking(true);
         audioRef.current.onended = () => setIsSpeaking(false);
+        audioRef.current.onerror = () => setIsSpeaking(false);
         audioRef.current.play().catch(() => {});
       }
     } catch {

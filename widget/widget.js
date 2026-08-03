@@ -635,9 +635,8 @@
 
   async function speakTextReply(text) {
     try {
-      const audioUrl = await synthesizeAudio(text);
       const audio = document.getElementById('ca-audio');
-      audio.src = audioUrl;
+      audio.src = `${CONFIG.apiUrl}/api/voice/synthesize?text=${encodeURIComponent(text)}`;
       audio.play();
     } catch (error) {
       console.warn('[Calling Agent Widget] Server TTS failed, using browser TTS:', error.message);
