@@ -504,7 +504,7 @@
       };
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
         if (blob.size > 0) await sendVoiceMessage(blob);
       };
       mediaRecorder.start();
