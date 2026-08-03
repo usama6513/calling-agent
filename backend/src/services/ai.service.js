@@ -311,6 +311,60 @@ class AIService {
     return result.trim();
   }
 
+  static feminineUrdu(text) {
+    if (!text) return text;
+    let t = String(text);
+
+    const urduPairs = [
+      [/کر سکتا ہوں/gi, 'کر سکتی ہوں'],
+      [/سکتا ہوں/gi, 'سکتی ہوں'],
+      [/کر رہا ہوں/gi, 'کر رہی ہوں'],
+      [/رہا ہوں/gi, 'رہی ہوں'],
+      [/کرتا ہوں/gi, 'کرتی ہوں'],
+      [/دیتا ہوں/gi, 'دیتی ہوں'],
+      [/لےتا ہوں/gi, 'لےتی ہوں'],
+      [/چاہتا ہوں/gi, 'چاہتی ہوں'],
+      [/سوچتا ہوں/gi, 'سوچتی ہوں'],
+      [/بولتا ہوں/gi, 'بولتی ہوں'],
+      [/دیکھتا ہوں/gi, 'دیکھتی ہوں'],
+      [/جانتا ہوں/gi, 'جانتی ہوں'],
+      [/سکتا ہوں/gi, 'سکتی ہوں'],
+      [/ہوں گا/gi, 'ہوں گی'],
+      [/سکتا/gi, 'سکتی'],
+      [/رہا ہوں/gi, 'رہی ہوں'],
+      [/کیا ہے/gi, 'کی ہے'],
+    ];
+
+    const romanPairs = [
+      [/kar sakta hoon/gi, 'kar sakti hoon'],
+      [/sakta hoon/gi, 'sakti hoon'],
+      [/kar raha hoon/gi, 'kar rahi hoon'],
+      [/raha hoon/gi, 'rahi hoon'],
+      [/karta hoon/gi, 'karti hoon'],
+      [/deta hoon/gi, 'deti hoon'],
+      [/leta hoon/gi, 'leti hoon'],
+      [/chahata hoon/gi, 'chahati hoon'],
+      [/sochta hoon/gi, 'sochti hoon'],
+      [/bolta hoon/gi, 'bolti hoon'],
+      [/dekhta hoon/gi, 'dekhti hoon'],
+      [/janta hoon/gi, 'janti hoon'],
+      [/kar sakta/gi, 'kar sakti'],
+      [/sakta/gi, 'sakti'],
+      [/kar raha/gi, 'kar rahi'],
+      [/hoon ga/gi, 'hoon gi'],
+      [/main hoon/gi, 'main hoon'],
+      [/mujhe chahiye/gi, 'mujhe chahiye'],
+      [/kiya hoon/gi, 'ki hoon'],
+      [/gaya hoon/gi, 'gayi hoon'],
+      [/aaya hoon/gi, 'aayi hoon'],
+    ];
+
+    for (const [re, replacement] of urduPairs) t = t.replace(re, replacement);
+    for (const [re, replacement] of romanPairs) t = t.replace(re, replacement);
+
+    return t;
+  }
+
   static truncate(text, maxLength = 2000) {
     if (!text) return text;
     const str = String(text);
@@ -501,6 +555,10 @@ class AIService {
 
     if (!assistantMessage) {
       throw new Error('No response generated from AI');
+    }
+
+    if (gender === 'female') {
+      assistantMessage = this.feminineUrdu(assistantMessage);
     }
 
     await prisma.message.create({
