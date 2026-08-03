@@ -219,6 +219,7 @@ export default function ChatPage() {
           conversationId,
           speechInput: transcript,
           channel: 'voice',
+          gender: 'female',
         }),
       });
       const data = await res.json();

@@ -317,7 +317,7 @@ class AIService {
     return str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
   }
 
-  static buildSystemPrompt(business, channel = 'web', userLanguage = 'auto') {
+  static buildSystemPrompt(business, channel = 'web', userLanguage = 'auto', gender = 'auto') {
     const typePrompt = BUSINESS_TYPE_PROMPTS[business.type] || BUSINESS_TYPE_PROMPTS.generic;
 
     let knowledgeContext = '';
@@ -359,6 +359,12 @@ class AIService {
     let languageContext = GROQ_SYSTEM_PROMPT;
     if (userLanguage === 'urdu') {
       languageContext = `LANGUAGE: The user is speaking/writing in URDU (Urdu script or Roman Urdu). You MUST reply in URDU ONLY. Use the same script the user used (if they wrote Roman Urdu, reply in Roman Urdu; if pure Urdu script, reply in Urdu script). Do NOT reply in English. Use proper PAKISTANI URDU vocabulary and pronunciation - NEVER use Hindi/Hindustani words, Hindi script (Devanagari), or Bollywood-style Hindi expressions. Use words natural to Pakistan (e.g. 'chahiye', 'karein', 'bataen', 'madad', 'paisa', 'akhrajat'). Keep the Urdu consistent throughout the conversation.`;
+
+      if (gender === 'female') {
+        languageContext += `\n\nGENDER AGREEMENT: You speak with a FEMALE voice. In Urdu, ALL verbs and possessive forms that refer to yourself (the speaker) MUST use the feminine form. Use: 'main aapki madad kar sakti hoon', 'main bata sakti hoon', 'main samjha sakti hoon', 'main ne aapki baat sun li hai', 'mujhe aapki madad karne mein khushi hogi', 'main chah rahi hoon', 'main soch rahi hoon', 'yeh main kar sakti hoon'. NEVER use masculine forms for yourself: never say 'kar sakta hoon', 'bata sakta hoon', 'aapki madad kar sakta hoon', 'mujhe khushi hogi' (if referring to yourself), 'soch raha hoon'. Only when talking ABOUT the user's own gender use the correct form for them. Consistency matters - use feminine endings (ti/ri/hoon) throughout your own speech.`;
+      } else if (gender === 'male') {
+        languageContext += `\n\nGENDER AGREEMENT: You speak with a MALE voice. In Urdu, ALL verbs and possessive forms that refer to yourself (the speaker) MUST use the masculine form. Use: 'main aapki madad kar sakta hoon', 'main bata sakta hoon', 'main soch raha hoon', 'mujhe khushi hogi'. NEVER use feminine forms for yourself: never say 'kar sakti hoon', 'bata sakti hoon', 'soch rahi hoon'.`;
+      }
     } else if (userLanguage === 'english') {
       languageContext = `LANGUAGE: The user is writing in ENGLISH. You MUST reply in ENGLISH ONLY. Do NOT reply in Urdu, Hindi, or Roman Urdu, even if some earlier messages were in another language. Keep the English consistent throughout the conversation.`;
     }
@@ -379,7 +385,7 @@ class AIService {
     }));
   }
 
-  static async chat(businessId, conversationId, userMessage, channel = 'web', attachmentId = null) {
+  static async chat(businessId, conversationId, userMessage, channel = 'web', attachmentId = null, gender = 'auto') {
     const business = await prisma.business.findUnique({
       where: { id: businessId },
     });
@@ -429,7 +435,7 @@ class AIService {
 
     const history = await this.getConversationHistory(conversation.id);
     const userLanguage = detectLanguage(userMessage);
-    const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage);
+    const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage, gender);
 
     const messages = [
       { role: 'system', content: systemPrompt },

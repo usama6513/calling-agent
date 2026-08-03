@@ -558,6 +558,7 @@
           conversationId: conversationId,
           speechInput: transcript,
           channel: 'voice',
+          gender: 'female',
         }),
       });
       const data = await response.json();

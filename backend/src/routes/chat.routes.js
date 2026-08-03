@@ -35,7 +35,7 @@ router.post('/ensure-conversation', asyncHandler(async (req, res) => {
 }));
 
 router.post('/', asyncHandler(async (req, res) => {
-  const { businessId, conversationId, message, channel, attachmentId } = req.body;
+  const { businessId, conversationId, message, channel, attachmentId, gender } = req.body;
 
   if (!businessId || !message) {
     return res.status(400).json({
@@ -49,7 +49,8 @@ router.post('/', asyncHandler(async (req, res) => {
     conversationId || null,
     message,
     channel || 'web',
-    attachmentId || null
+    attachmentId || null,
+    gender || 'auto'
   );
 
   res.json({
@@ -59,7 +60,7 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 router.post('/voice', asyncHandler(async (req, res) => {
-  const { businessId, conversationId, speechInput, channel } = req.body;
+  const { businessId, conversationId, speechInput, channel, gender } = req.body;
 
   if (!businessId || !speechInput) {
     return res.status(400).json({
@@ -72,7 +73,9 @@ router.post('/voice', asyncHandler(async (req, res) => {
     businessId,
     conversationId || null,
     speechInput,
-    channel || 'phone'
+    channel || 'phone',
+    null,
+    gender || 'auto'
   );
 
   res.json({
