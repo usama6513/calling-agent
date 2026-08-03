@@ -633,6 +633,24 @@
     }
   }
 
+  async function speakTextReply(text) {
+    try {
+      const audioUrl = await synthesizeAudio(text);
+      const audio = document.getElementById('ca-audio');
+      audio.src = audioUrl;
+      audio.play();
+    } catch (error) {
+      console.warn('[Calling Agent Widget] Server TTS failed, using browser TTS:', error.message);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.replace(/[*_`#]/g, ''));
+        utterance.lang = /[\u0600-\u06FF]/.test(text) ? 'ur-PK' : 'en-US';
+        utterance.rate = 1.1;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  }
+
   async function sendMessage() {
     const input = document.getElementById('ca-input');
     const text = input.value.trim();
@@ -667,6 +685,7 @@
       if (data.success && data.data) {
         conversationId = data.data.conversationId;
         addMessage(data.data.message);
+        speakTextReply(data.data.message);
       } else {
         addMessage('Sorry, I encountered an error. Please try again.');
       }

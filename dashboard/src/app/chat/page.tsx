@@ -136,6 +136,7 @@ export default function ChatPage() {
       if (data.success) {
         setConversationId(data.data.conversationId);
         setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString() }]);
+        speakReply(data.data.message);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date().toISOString() }]);
       }
@@ -249,6 +250,24 @@ export default function ChatPage() {
   };
 
   const stopSpeaking = () => { synthRef.current?.cancel(); setIsSpeaking(false); };
+
+  const playServerAudio = async (text: string) => {
+    try {
+      const audioUrl = await synthesizeAudio(text);
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.onplay = () => setIsSpeaking(true);
+        audioRef.current.onended = () => setIsSpeaking(false);
+        audioRef.current.play().catch(() => {});
+      }
+    } catch {
+      speakText(text);
+    }
+  };
+
+  const speakReply = (text: string) => {
+    playServerAudio(text);
+  };
 
   const speakText = (text: string) => {
     if (!synthRef.current) return;
