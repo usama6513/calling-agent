@@ -170,12 +170,12 @@ function detectLanguage(text) {
   if (words.length === 0) return 'english';
 
   const strongMatches = words.filter((w) => STRONG_URDU_WORDS.includes(w)).length;
-  if (strongMatches >= 2) return 'urdu';
-  if (strongMatches === 1 && words.length <= 6) return 'urdu';
+  if (strongMatches >= 2) return 'roman-urdu';
+  if (strongMatches === 1 && words.length <= 6) return 'roman-urdu';
 
   const allMatches = words.filter((w) => ROMAN_URDU_WORDS.includes(w)).length;
   const ratio = allMatches / words.length;
-  if (ratio >= 0.18) return 'urdu';
+  if (ratio >= 0.18) return 'roman-urdu';
 
   return 'english';
 }
@@ -418,6 +418,14 @@ class AIService {
         languageContext += `\n\nGENDER AGREEMENT: You speak with a FEMALE voice. In Urdu, ALL verbs and possessive forms that refer to yourself (the speaker) MUST use the feminine form. Use: 'main aapki madad kar sakti hoon', 'main bata sakti hoon', 'main samjha sakti hoon', 'main ne aapki baat sun li hai', 'mujhe aapki madad karne mein khushi hogi', 'main chah rahi hoon', 'main soch rahi hoon', 'yeh main kar sakti hoon'. NEVER use masculine forms for yourself: never say 'kar sakta hoon', 'bata sakta hoon', 'aapki madad kar sakta hoon', 'mujhe khushi hogi' (if referring to yourself), 'soch raha hoon'. Only when talking ABOUT the user's own gender use the correct form for them. Consistency matters - use feminine endings (ti/ri/hoon) throughout your own speech.`;
       } else if (gender === 'male') {
         languageContext += `\n\nGENDER AGREEMENT: You speak with a MALE voice. In Urdu, ALL verbs and possessive forms that refer to yourself (the speaker) MUST use the masculine form. Use: 'main aapki madad kar sakta hoon', 'main bata sakta hoon', 'main soch raha hoon', 'mujhe khushi hogi'. NEVER use feminine forms for yourself: never say 'kar sakti hoon', 'bata sakti hoon', 'soch rahi hoon'.`;
+      }
+    } else if (userLanguage === 'roman-urdu') {
+      languageContext = `LANGUAGE: The user is writing in ROMAN URDU (Urdu written with English letters, e.g. 'aap kaise hain?', 'mujhe madad chahiye'). You MUST reply in ROMAN URDU using ENGLISH/LATIN LETTERS ONLY - exactly the same style the user used. CRITICAL: NEVER write in Urdu script (Nastaliq/Arabic letters), NEVER write in Devanagari/Hindi, and NEVER reply in pure English. Write everything in romanized Pakistani Urdu like the user's message. Use proper Pakistani Urdu words (chahiye, karein, bataen, madad, paisa, akhrajat). Keep the same roman-Urdu style consistent throughout the conversation.`;
+
+      if (gender === 'female') {
+        languageContext += `\n\nGENDER AGREEMENT: You speak with a FEMALE voice. In Roman Urdu, ALL first-person verbs and possessive forms that refer to yourself MUST use the feminine form. Use: 'main aapki madad kar sakti hoon', 'main bata sakti hoon', 'main soch rahi hoon', 'mujhe khushi hogi'. NEVER use masculine forms for yourself: never say 'kar sakta hoon', 'bata sakta hoon', 'soch raha hoon'. Use feminine endings (ti, ri, hoon) throughout your own speech.`;
+      } else if (gender === 'male') {
+        languageContext += `\n\nGENDER AGREEMENT: You speak with a MALE voice. In Roman Urdu, ALL first-person verbs and possessive forms that refer to yourself MUST use the masculine form. Use: 'main aapki madad kar sakta hoon', 'main bata sakta hoon', 'main soch raha hoon'. NEVER use feminine forms for yourself: never say 'kar sakti hoon', 'bata sakti hoon', 'soch rahi hoon'.`;
       }
     } else if (userLanguage === 'english') {
       languageContext = `LANGUAGE: The user is writing in ENGLISH. You MUST reply in ENGLISH ONLY. Do NOT reply in Urdu, Hindi, or Roman Urdu, even if some earlier messages were in another language. Keep the English consistent throughout the conversation.`;
