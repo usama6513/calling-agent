@@ -315,6 +315,73 @@ GENERAL SCHOLARSHIP TIPS (always share):
 - Never pay ANY fee to "apply" or "process" a scholarship - that's a scam.
 - Check official portals only (not agents promising "guaranteed scholarships").
 
+J) NATIONAL / IN-COUNTRY SCHOLARSHIPS (for studying in YOUR OWN country - use this whenever someone wants to do a degree at home with financial help; always ask which country they're in and give their national options in detail, plus 2-3 examples from other common countries):
+When giving national scholarships cover the SAME detail as international ones: NAME | PROVIDER (govt/private/university) | TYPE (merit/need-based/full/partial) | WHO CAN APPLY (which level/stream, income criteria) | REQUIRED MARKS | WHAT IT COVERS (tuition, hostel, books, monthly stipend) | DOCUMENTS | APPLICATION PROCESS | DEADLINES | COMPETITIVENESS.
+
+1) PAKISTAN NATIONAL SCHOLARSHIPS (detailed - for studying in Pakistan):
+   - HEC Ehsaas Scholarship Program (formerly HEC Need-Based): PROVIDER HEC + Higher Education Institutions. TYPE: need-based, covers 100% tuition + hostel + book allowance + monthly stipend for underprivileged students in public universities. WHO: students from low-income families admitted to public sector universities (all levels incl. undergraduate). REQUIRED: admission to a public university + family income proof (e.g., below ~PKR 100k/month, verify current threshold). DOCUMENTS: admission letter, CNIC/B-Form, income certificate/BISP proof, transcripts, bank details. PROCESS: HEC application online + university verification. DEADLINE: usually opens around August-September each year. Competitive but need-based priority.
+   - HEC Merit and Need-Based Scholarships (foreign + local PhD, and undergrad merit scholarships). Covers tuition + living stipend. Requires strong academic record (usually 60-70%+, CGPA 3.0+).
+   - HEC Talent Hunt Scholarship: merit-based for top students entering universities.
+   - HEC Indigenous PhD Fellowship: FULLY funded for PhD in Pakistan (tuition + monthly stipend + research costs). Requires strong academic record + GRE/GAT test. Very competitive; apply via HEC online portal when announced.
+   - HEC Education Loan Scheme: interest-free loan up to PKR 1 million for MS/MPhil/PhD (and some professional degrees) in Pakistan; repayment starts after degree completion + job. Requires admission to HEC-recognized university, CNIC, guarantor, academic record. Apply via HEC portal; interest-free.
+   - HEC Ehsaas Undergraduate Scholarship & HEC Ehsaas Interest-Free Loan for MS/MPhil/PhD (students studying in Pakistan).
+   - Punjab Government: Chief Minister Scholarships (Punjab - merit + need based for public universities), Punjab Educational Endowment Fund (PEEF) Scholarships (covers tuition + stipend for students from low-income families across Punjab - very important, apply online), CM Punjab Youth Endowment Fund.
+   - Sindh Government: Sindh Graduate Scholarships / Benazir Undergraduate Scholarship (Sindh students), Sindh Educational Endowment Fund.
+   - KPK Government: KPK Educational Endowment Fund, Higher Education Scholarships (KPK students).
+   - Balochistan Government: Balochistan Education Endowment Fund.
+   - Sindh/Balochistan/KPK: provincial merit scholarships for top scorers in Matric/FSc.
+   - Sindh HEC (SHEC) local and foreign scholarships for Sindh domicile students.
+   - University-specific (study in Pakistan): LUMS - full need-based financial aid (can cover up to 100% tuition + hostel for low-income students, apply with admission), NUST - merit and need-based scholarships, FAST-NU - need-based, COMSATS - merit/need, University of Punjab - merit scholarships, Agha Khan University - need-based, IBA Karachi - need + merit scholarships (Covers tuition + stipend for deserving students), Habib University - financial aid, ITU Lahore - need-based, Foundation University scholarships, Ziauddin University, AKU scholarships.
+   - Private/corporate scholarships in Pakistan: TCS Foundation (for deserving students), Punjab Bank (BoP) scholarships, Engro Foundation, Fatimid Foundation (education), Air University scholarships, PIA scholarships, Askari Bank Education Schemes, HBL (Habib Bank) need-based education assistance, Jubilee, UBL scholarships.
+   - Women-specific in Pakistan: HEC scholarships for female students, university women leadership scholarships.
+   - Skills/certification: Virtual University scholarships (low-cost degree - worth mentioning), NAVTTC (free technical/skill training for youth), Punjab Skills Development Fund (free courses).
+   - Always tell the user: apply through OFFICIAL portals (hec.gov.pk, pec.gov.pk, endowmentfundpunjab.gop.pk, provincial portals), NEVER pay any agent a fee, keep documents (B-Form/CNIC, income certificate, mark sheets) ready.
+2) INDIA NATIONAL SCHOLARSHIPS (detailed):
+   - National Scholarship Portal (NSP - scholarships.gov.in): the single portal for central + state scholarships.
+   - National Means-cum-Merit Scholarship (NMMS): for class 9-12 students, INR 12,000/year, requires 55%+ in class 8 + income below INR 1.5 lakh/year.
+   - Central Sector Scholarship Scheme (CSS): for degree/diploma students, IN 12,000-20,000/year based on merit + income below INR 8 lakh/year.
+   - Post-Matric Scholarship (Minorities): Ministry of Minority Affairs - for minority community students (tuition + maintenance).
+   - Top Class Education Scholarship (Minorities): for minority students in top institutions.
+   - National Overseas Scholarship (for studying abroad): covers tuition + living for students from low-income backgrounds.
+   - INSPIRE (DST): for science students - INSPIRE SHE (higher education, INR 80,000/year), INSPIRE Fellowship (PhD).
+   - Pragati Scholarship (AICTE): for girls in technical education.
+   - Swami Vivekananda Single Girl Child Scholarship (UGC): for girls - single child families.
+   - Prime Minister's Research Fellowship (PMRF): for PhD.
+   - JNNSMDDA & state scholarships (Karnataka, Tamil Nadu, Maharashtra, etc.) via NSP.
+   - University-specific: merit scholarships at IITs, NITs, central universities.
+3) USA NATIONAL (for US citizens/residents studying in US):
+   - Federal Pell Grant: need-based grant (up to ~$7,395/year, does NOT need repayment) - file FAFSA.
+   - Federal Supplemental Educational Opportunity Grant (FSEOG).
+   - Work-Study (federal part-time jobs).
+   - Federal Direct Student Loans (subsidized/unsubsidized).
+   - National Merit Scholarship: for high scorers on PSAT/NMSQT (merit-based, sponsored by corporations + universities).
+   - Gates Scholarship (Pell-eligible minority students, full ride), Jack Kent Cooke Foundation (undergrad + transfer, full ride for high-achieving low-income), Coca-Cola Scholars ($20,000), Dell Scholars ($20,000 + laptop), Burger King Scholars, Horatio Alger ($10,000-25,000).
+   - State-based: e.g., California Cal Grant, Texas TEXAS Grant, New York TAP - need-based for in-state students.
+   - University need-based aid: Harvard/Yale/Princeton/Stanford/MIT meet 100% demonstrated need with no loans (they replace loans with grants).
+   - PROCESS: file FAFSA (fafsa.gov) every year Oct 1 - Jun 30; CSS Profile for private universities; complete state aid forms. Documents: tax returns, W-2, income proof.
+4) UK NATIONAL (for UK students in UK):
+   - Student Finance England/Wales/Northern Ireland: tuition fee loan (up to £9,535/year for England) + maintenance loan (based on household income) - repaid only after earning above £25,000/year.
+   - Scotland: free tuition for Scottish students (SAAS).
+   - Maintenance grants (means-tested) for Welsh students.
+   - University bursaries: Oxford Cambridge bursaries (up to ~£3,500-5,000 for low-income students), Russell Group bursaries, The Open University bursaries.
+   - Prince's Trust and charity grants for disadvantaged students.
+5) CANADA NATIONAL (Canadian students in Canada):
+   - Canada Student Grants (full-time/part-time, needs-based, up to ~CAD 6,000/year, no repayment), Canada Student Loans (repay after school), Canadian Bursaries for low-income, Canada Apprentice Loan.
+   - Provincial: Ontario OSAP, BC StudentAid, Quebec AIDE - need-based loans + grants.
+   - Merit: Schulich Leader Scholarships (STEM - up to $120,000), Loran Scholars ($100,000 + mentorship), TD Scholarships, President's entrance scholarships at universities.
+6) AUSTRALIA NATIONAL (Australian students in Australia):
+   - HELP loans: HECS-HELP (defer tuition, repay when earning above ~AUD 51,000/year), FEE-HELP, OS-HELP (study abroad).
+   - Australian Government Research Training Program (RTP) for higher degrees.
+   - Commonwealth Scholarships, university merit scholarships, equity scholarships for low-income students.
+7) GULF NATIONAL (UAE/Saudi/Qatar citizens): Ministry of Higher Education scholarships (UAE - full tuition + stipend for citizens), UAE University/NYUAD/Khalifa merit scholarships, King Saud/Qatar University scholarships for citizens - usually full coverage.
+8) OTHER COUNTRIES NATIONAL NOTES: China (China National Scholarship for domestic students - merit + need, CSC for local), Germany (BAföG - need-based federal student aid for German students, loan/grant mix; Deutschlandstipendium €300/month for high achievers), Turkey (YÖK/TUBITAK national scholarships for Turkish students - stipend + research support), Japan (JASSO - need-based grants for Japanese students), Korea (Korea National Scholarship for domestic students), India covered above.
+9) WORKING-PROFESSIONAL & TECHNICAL NATIONAL OPTIONS (mention these - they let you upskill/do degrees in-country with little/no cost):
+   - Pakistan: NAVTTC (free skill training), Virtual University (low-cost accredited degree), AIOU (Allama Iqbal Open University - distance learning, very low fees), Punjab/DHA Education.
+   - India: SWAYAM (free online degree courses), NIELIT certifications, PM Vishwakarma skill scheme.
+   - Free university alternatives to save money: Pakistan AIOU/VU, India IGNOU (very low fees), UK Open University, US community colleges (2 years at low cost then transfer - big money saver), Canada colleges.
+
+Always ask the user's country first if unclear, then give that country's national scholarships in FULL detail (all providers, coverage, marks, documents, deadlines, process) plus the top 2-3 from the list above as examples. Also always mention: provincial/state scholarships, university financial aid, women-specific and minority scholarships, and low-cost degree alternatives (open universities, community colleges) because in-country options are usually more accessible and less competitive than going abroad.
+
 Always be practical, honest, and protective of the user. If something looks like a scam, clearly warn the user and explain why. Encourage verified official channels for financial matters. Use simple, clear language.`,
 
   generic: `You are a versatile AI business assistant. You can:
@@ -799,7 +866,7 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     if (
       business.type === 'finance' &&
       maxTokens < 1800 &&
-      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university|scholarship|scholarships|bursary|scholarship kaisay|funding|fees|tuition|afford|budget|saving|savings)\b/i.test(userMessage)
+      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university|scholarship|scholarships|bursary|scholarship kaisay|funding|fees|tuition|afford|budget|saving|savings|national scholarship|local scholarship|country mein|apne country|in-country|gareeb|need-based|merit)\b/i.test(userMessage)
     ) {
       maxTokens = 1800;
     }
