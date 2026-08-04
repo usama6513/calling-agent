@@ -144,6 +144,23 @@
         transition: background 0.2s;
       }
 
+      .ca-new-chat-btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: background 0.2s;
+        margin-right: 8px;
+        white-space: nowrap;
+      }
+
+      .ca-new-chat-btn:hover {
+        background: rgba(255,255,255,0.35);
+      }
+
       .ca-close-btn:hover {
         background: rgba(255,255,255,0.3);
       }
@@ -403,6 +420,7 @@
             <p>${CONFIG.subtitle}</p>
           </div>
           <div class="ca-header-actions">
+            <button class="ca-new-chat-btn" id="ca-new-chat" aria-label="Start new chat">🔄 New Chat</button>
             <button class="ca-close-btn" id="ca-close" aria-label="Close chat">✕</button>
           </div>
         </div>
@@ -425,6 +443,7 @@
 
     document.getElementById('ca-toggle').addEventListener('click', toggleChat);
     document.getElementById('ca-close').addEventListener('click', toggleChat);
+    document.getElementById('ca-new-chat').addEventListener('click', startNewChat);
     document.getElementById('ca-send').addEventListener('click', sendMessage);
     document.getElementById('ca-mic').addEventListener('click', toggleVoiceInput);
     document.getElementById('ca-attach').addEventListener('click', () => {
@@ -449,6 +468,19 @@
       chatWindow.classList.remove('ca-open');
       button.innerHTML = '💬';
     }
+  }
+
+  function startNewChat() {
+    if (!confirm('Nayi chat shuru karni hai? Purani chat history save rahegi.')) return;
+    saveConversationId(null);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) { /* ignore */ }
+    const messages = document.getElementById('ca-messages');
+    messages.innerHTML = `<div class="ca-message ca-bot">${CONFIG.greeting}</div>`;
+    pendingAttachment = null;
+    document.getElementById('ca-input').value = '';
+    document.getElementById('ca-input').focus();
   }
 
   function addMessage(text, isUser = false) {
