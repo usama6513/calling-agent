@@ -27,6 +27,16 @@
   };
 
   let conversationId = null;
+  const storageKey = 'ca-conversation-' + CONFIG.businessId;
+  try {
+    conversationId = localStorage.getItem(storageKey);
+  } catch (e) { /* localStorage unavailable */ }
+  function saveConversationId(id) {
+    conversationId = id;
+    try {
+      if (id) localStorage.setItem(storageKey, id);
+    } catch (e) { /* ignore */ }
+  }
   let isOpen = false;
   let pendingAttachment = null;
   let isRecording = false;
@@ -564,7 +574,7 @@
       const data = await response.json();
       removeTyping();
       if (data.success && data.data) {
-        conversationId = data.data.conversationId;
+        saveConversationId(data.data.conversationId);
         try {
           const audioUrl = await synthesizeAudio(data.data.message);
           addVoiceNote(audioUrl);
@@ -613,7 +623,7 @@
         });
         const convoData = await convoRes.json();
         convoId = convoData.data?.conversationId;
-        conversationId = convoId;
+        saveConversationId(convoId);
       }
 
       const formData = new FormData();
@@ -701,7 +711,7 @@
       pendingAttachment = null;
 
       if (data.success && data.data) {
-        conversationId = data.data.conversationId;
+        saveConversationId(data.data.conversationId);
         addMessage(data.data.message);
         speakTextReply(data.data.message);
       } else {

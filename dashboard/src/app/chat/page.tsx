@@ -31,7 +31,36 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationIdState] = useState<string | null>(null);
+
+  const STORAGE_KEY = 'ca-conversations-dashboard';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const map = JSON.parse(saved);
+          if (selectedBusiness && map[selectedBusiness]) {
+            setConversationIdState(map[selectedBusiness]);
+          }
+        } catch {}
+      }
+    }
+  }, [selectedBusiness]);
+
+  const setConversationId = (id: string | null) => {
+    setConversationIdState(id);
+    if (typeof window === 'undefined') return;
+    const map: Record<string, string> = {};
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) Object.assign(map, JSON.parse(saved));
+    } catch {}
+    if (id) map[selectedBusiness] = id;
+    else delete map[selectedBusiness];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  };
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [uploading, setUploading] = useState(false);
