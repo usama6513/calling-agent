@@ -244,7 +244,7 @@ export default function ChatPage() {
           conversationId,
           speechInput: transcript,
           channel: 'voice',
-          gender: 'female',
+          gender: 'male',
         }),
       });
       const data = await res.json();
