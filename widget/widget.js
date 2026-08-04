@@ -636,8 +636,27 @@
   async function speakTextReply(text) {
     try {
       const audio = document.getElementById('ca-audio');
+      if (!audio) return;
       audio.src = `${CONFIG.apiUrl}/api/voice/synthesize?text=${encodeURIComponent(text)}`;
-      audio.play();
+      const tryPlay = (muted) => {
+        if (muted) audio.muted = true;
+        audio.play().then(function () {
+          if (muted) setTimeout(function () { audio.muted = false; }, 100);
+        }).catch(function () {
+          if (!muted) tryPlay(true);
+          else {
+            audio.muted = false;
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(text.replace(/[*_`#]/g, ''));
+              utterance.lang = /[\u0600-\u06FF]/.test(text) ? 'ur-PK' : 'en-US';
+              utterance.rate = 1.1;
+              window.speechSynthesis.speak(utterance);
+            }
+          }
+        });
+      };
+      tryPlay(false);
     } catch (error) {
       console.warn('[Calling Agent Widget] Server TTS failed, using browser TTS:', error.message);
       if ('speechSynthesis' in window) {
@@ -702,6 +721,25 @@
   function init() {
     createStyles();
     createWidget();
+    const unlock = function () {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          var ctx = new AC();
+          var silent = ctx.createBufferSource();
+          silent.buffer = ctx.createBuffer(1, 1, 22050);
+          silent.connect(ctx.destination);
+          silent.start(0);
+          ctx.resume().then(function () { ctx.close(); }).catch(function () {});
+        }
+      } catch (e) {}
+      document.removeEventListener('pointerdown', unlock);
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+    document.addEventListener('pointerdown', unlock);
+    document.addEventListener('touchstart', unlock);
+    document.addEventListener('keydown', unlock);
   }
 
   if (document.readyState === 'loading') {

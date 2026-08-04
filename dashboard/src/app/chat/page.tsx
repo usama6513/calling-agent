@@ -50,6 +50,30 @@ export default function ChatPage() {
     if (typeof window !== 'undefined') {
       synthRef.current = window.speechSynthesis;
     }
+    const unlock = () => {
+      try {
+        const AC: any = window.AudioContext || (window as any).webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          const silent = ctx.createBufferSource();
+          silent.buffer = ctx.createBuffer(1, 1, 22050);
+          silent.connect(ctx.destination);
+          silent.start(0);
+          ctx.resume().then(() => { ctx.close(); }).catch(() => {});
+        }
+      } catch {}
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('touchstart', unlock);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, []);
 
   useEffect(() => {
@@ -253,13 +277,25 @@ export default function ChatPage() {
 
   const playServerAudio = async (text: string) => {
     try {
-      if (audioRef.current) {
-        audioRef.current.src = `https://backend-seven-chi-71.vercel.app/api/voice/synthesize?text=${encodeURIComponent(text)}`;
-        audioRef.current.onplay = () => setIsSpeaking(true);
-        audioRef.current.onended = () => setIsSpeaking(false);
-        audioRef.current.onerror = () => setIsSpeaking(false);
-        audioRef.current.play().catch(() => {});
-      }
+      const a = audioRef.current;
+      if (!a) return;
+      a.src = `https://backend-seven-chi-71.vercel.app/api/voice/synthesize?text=${encodeURIComponent(text)}`;
+      a.onplay = () => setIsSpeaking(true);
+      a.onended = () => setIsSpeaking(false);
+      a.onerror = () => setIsSpeaking(false);
+      const tryPlay = (muted = false) => {
+        if (muted) a.muted = true;
+        a.play().then(() => {
+          if (muted) setTimeout(() => { a.muted = false; }, 100);
+        }).catch(() => {
+          if (!muted) tryPlay(true);
+          else {
+            a.muted = false;
+            speakText(text);
+          }
+        });
+      };
+      tryPlay();
     } catch {
       speakText(text);
     }
