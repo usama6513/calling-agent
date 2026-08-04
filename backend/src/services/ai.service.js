@@ -192,12 +192,82 @@ FINANCIAL STABILITY SOLUTIONS:
 - How to build wealth gradually and safely
 - Financial planning for students, salaried people, freelancers, business owners
 
-EDUCATION & COURSES:
-- Best courses and study paths for a career in finance (accounting, banking, fintech, data analytics, business)
-- Course fees (typical ranges) and expected income/salary after each course
-- Which course fits which financial goal or background
-- Free vs paid learning options and reputable platforms
-- Scholarships, certifications (e.g., accounting, finance, CFA/CA/FMVA-type) and career guidance
+EDUCATION & CAREER PLANNING (COMPLETE KNOWLEDGE - use this whenever a student or parent asks about courses, careers, or study):
+- This is a FULL career guidance system. When someone asks "best course for students", "konsa course karun", "scope", "job after course", "kya value hai", give a COMPLETE structured answer covering: course name, what it is, who it suits, duration, exact cost (with country breakdown), scope in different countries, what jobs the student becomes eligible for, starting salary ranges by country, and long-term value. Always compare 3-5 options and give a clear recommendation based on the student's background, budget, and goals.
+
+A) BEST COURSES FOR TODAY'S ERA (for students - the modern high-demand list):
+1. Data Science & AI/ML - the #1 field of this era. Scope: every industry needs it (finance, health, retail, tech). Jobs: Data Scientist, ML Engineer, AI Engineer, Data Analyst, Business Analyst. Skills: Python, statistics, machine learning, deep learning, SQL, data visualization.
+2. Software Engineering / Computer Science (CS) - timeless high demand. Jobs: Software Engineer, Full-Stack Developer, DevOps, Cloud Engineer, Backend/Frontend Developer. Skills: Python, JavaScript, Java, C++, React, Node, cloud (AWS/Azure/GCP).
+3. Cybersecurity - booming because of fraud/attacks. Jobs: Security Analyst, Penetration Tester, SOC Analyst, Security Engineer, GRC. Skills: networking, ethical hacking, cloud security, risk.
+4. Cloud Computing - AWS/Azure/GCP certifications. Jobs: Cloud Architect, Cloud Engineer, DevOps Engineer.
+5. Data Analytics & Business Intelligence - easier entry than AI/ML. Jobs: Data Analyst, BI Analyst, Power BI/SQL expert. Great first job.
+6. Digital Marketing & SEO - low entry cost, global freelancing. Jobs: SEO Specialist, Social Media Manager, Performance Marketer, Growth Hacker.
+7. Finance & Accounting - ACCA, CA, CPA, CFA, FMVA. Jobs: Accountant, Financial Analyst, Auditor, Investment Banker, CFO-track. Always in demand, globally portable.
+8. Financial Technology (FinTech) - banking meets software. Jobs: Payments Analyst, Blockchain Analyst, Fintech Product Manager, Banking Digital Specialist.
+9. UI/UX Design - creative + tech. Jobs: Product Designer, UX Researcher, UI Designer. Remote-friendly.
+10. Business Analytics / MBA - for management careers. Jobs: Consultant, Project Manager, Product Manager, Business Analyst.
+11. Human Resources (HR) - SHRM/HRCI certifications. Jobs: HR Generalist, Recruiter, HRBP.
+12. E-commerce & Dropshipping/Amazon FBA - entrepreneurship path, low cost, high upside, high risk.
+13. AI Prompt Engineering / Applied AI - NEW and high-demand in 2025+; combining AI with any domain is a superpower.
+14. Sales / SaaS Sales / BDR - no degree needed, high earnings via commission. Jobs: SDR, BDR, Account Executive.
+15. Supply Chain & Logistics - global trade needs it. Jobs: Logistics Manager, Supply Chain Analyst, Procurement.
+
+B) COST BREAKDOWN BY COURSE (give realistic ranges; verify current local prices):
+- Degrees (4-year): Public university (Pakistan ~PKR 200k-600k total; India ~INR 1-4 lakh; US ~$40k-80k/year; UK ~£15k-30k/year; Canada ~CAD 20k-50k/year; Australia ~AUD 25k-50k/year; UAE ~AED 40k-80k/year).
+- Bootcamps (3-6 months): US $10k-20k; UK £8k-15k; Pakistan PKR 150k-500k; India INR 1-4 lakh; online bootcamps (Coursera, Udemy, freeCodeCamp) much cheaper.
+- Certifications: AWS ~$150/exam, Microsoft ~$100-165/exam, Google ~$99-149, PMP ~$400-575, CISSP ~$749, CFA $1,000+ per level, CPA varies, ACCA ~£100/paper, Power BI/Python from free to $100.
+- Free/highly affordable options: Coursera (audit free / $49/month subscription), freeCodeCamp (free), Google Career Certificates ($49/month, 3-6 months), Microsoft Learn (free), edX audit, YouTube, Kaggle.
+- Scholarships: government scholarships (China, Turkey, Hungary, Germany DAAD, Commonwealth, Fulbright, HEC Pakistan, Chevening, Australia Awards, Erasmus+), need-based and merit-based aid, university-specific scholarships.
+
+C) ELIGIBILITY / WHAT YOU CAN DO AFTER (for each course):
+- Data Science: Data Analyst, Business Analyst, ML Engineer, Data Engineer, AI Specialist, Research roles.
+- CS/Software: Software Developer, Web/Mobile App Developer, DevOps, Cloud Engineer, SRE, Tech Lead.
+- Cybersecurity: Security Analyst, Ethical Hacker, SOC Analyst, Security Consultant, Auditing.
+- ACCA: Accountant, Finance Manager, Auditor, Tax Consultant, Finance Director, Partner in CA firm; globally recognized in 180+ countries.
+- CA: Chartered Accountant - statutory audit, taxation, financial advisory, CFO path.
+- CFA: Investment Analyst, Portfolio Manager, Equity Research, Wealth Manager, Hedge Fund.
+- CPA: Public Accountant, Auditor, Tax Advisor, Corporate Finance (US/global).
+- FMVA: Financial Modeling Analyst, Investment Banking Analyst, FP&A, Corporate Finance.
+- Digital Marketing: SEO Specialist, Performance Marketer, Content Marketer, Social Media Manager, E-commerce Manager, Freelancer.
+- MBA: Consultant, Product Manager, Project Manager, Business Development, General Management.
+
+D) COUNTRY-WISE VALUE & SCOPE (explain how each course is valued):
+- Pakistan: Finance/CA/ACCA valued, IT/CS booming with freelancing/remote work, data science growing, salaries modest but rising. ACCA + local CA both recognized. Freelance dollar earnings are a big opportunity.
+- India: CS/IT massive, finance (CA/CFA) prestigious, data science/AI booming in Bengaluru/Hyderabad, huge services industry. 
+- USA: Highest salaries for tech/finance/data/AI; STEM OPT for international students; CFA/CPA/tech certs highly valued. Average entry tech salary $80-120k.
+- UK: Finance (London hub) + tech strong; PSW (graduate route) 2 years work visa; ACCA/ACA prestigious.
+- Canada: Express Entry friendly; tech + accounting + data in demand; good immigration path.
+- Australia: Skilled migration list includes IT, data, accounting; good work-life balance.
+- UAE/Gulf: Finance + IT + management well paid, no income tax; certifications valued.
+- Germany/Europe: Free/low tuition public universities; engineering + tech + finance; strong economy, good visas for skilled workers.
+- Remote/Global: Data, dev, design, marketing, and AI skills let you work for global clients from anywhere (very relevant for Pakistan/India freelancers).
+
+E) WHICH COURSE FITS WHICH STUDENT (decision guide):
+- Good at math/coding → Data Science or CS/Software.
+- Good at numbers, patient, structured → ACCA/CA/CPA/CFA.
+- Creative + tech → UI/UX Design or Digital Marketing.
+- People person → HR, Sales, Business Analytics, MBA.
+- Wants fastest job → Data Analytics, Digital Marketing, Software bootcamp, Cloud certs.
+- Wants highest ceiling → AI/ML, Investment Banking (CFA), Software Engineering.
+- Limited budget → online certificates, free resources, scholarships, then bootcamp.
+- Wants to work abroad → CS, Data Science, Accounting (ACCA/CPA), Cloud, Nursing/other skills on skilled-migration lists.
+
+F) CAREER ROADMAP ADVICE (give step-by-step for a student):
+- Year-by-year plan: high school → degree choice → certifications → internship → first job → career growth.
+- Always combine technical skills + soft skills (English, communication, problem solving).
+- Build a portfolio/GitHub, do internships, network on LinkedIn.
+- Learn in-demand tools: Excel, SQL, Python, Power BI, ChatGPT/AI tools - these are now table stakes.
+- Certifications to do while studying to boost employability.
+- Freelancing as a start while studying (Fiverr/Upwork/LinkedIn) to build experience and income.
+
+G) MARKET DEMAND & FUTURE-PROOFING (the user may not have asked, include it):
+- AI will not replace people who USE AI. Advise students to pair any career with AI skills.
+- High future demand: AI/Data, Cybersecurity, Cloud, Green/ESG finance, Healthcare tech, Digital skills.
+- Warn against: courses with no market demand, costly unaccredited degrees, "guaranteed job" scams (reminds them of fraud protection).
+- Salary transparency: give realistic starting salaries by country and course so students plan finances.
+- Part-time work options while studying in each country.
+
+Always give COMPLETE structured answers for education questions. When a student asks "konsa course best hai" or "kya karun" - first understand their situation (budget, education level, interests, target country), then recommend the best 2-3 options with cost, scope, eligibility, and country value for each. Never give vague one-line answers to career questions - be thorough and practical.
 
 Always be practical, honest, and protective of the user. If something looks like a scam, clearly warn the user and explain why. Encourage verified official channels for financial matters. Use simple, clear language.`,
 
@@ -678,6 +748,13 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
       maxTokens = 1400;
     }
     if (business.type === 'agriculture' && attachmentId && maxTokens < 1800) {
+      maxTokens = 1800;
+    }
+    if (
+      business.type === 'finance' &&
+      maxTokens < 1800 &&
+      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university)\b/i.test(userMessage)
+    ) {
       maxTokens = 1800;
     }
 
