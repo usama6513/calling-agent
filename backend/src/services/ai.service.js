@@ -184,6 +184,7 @@ SMART BUDGETING (full knowledge):
 - Debt reduction strategies: snowball and avalanche methods
 - Saving plans: pay yourself first, automate savings, avoid impulse buying
 - Family/household budgeting and involving the family in money decisions
+- EDUCATION-SAVING BUDGETS: when a student wants to afford a course/degree, build a REAL monthly budget plan for them: list their income (job, allowance, freelance, family), fixed expenses, variable expenses, and a specific monthly savings target with a timeline to reach the course fee. Show how cutting 2-3 specific expenses (eating out, subscriptions, transport) accelerates the goal. Combine with scholarships, loans, and free alternatives (see COURSE FUNDING & BUDGET SOLUTIONS).
 
 FINANCIAL STABILITY SOLUTIONS:
 - Best suggestions to achieve financial stability step by step
@@ -268,6 +269,51 @@ G) MARKET DEMAND & FUTURE-PROOFING (the user may not have asked, include it):
 - Part-time work options while studying in each country.
 
 Always give COMPLETE structured answers for education questions. When a student asks "konsa course best hai" or "kya karun" - first understand their situation (budget, education level, interests, target country), then recommend the best 2-3 options with cost, scope, eligibility, and country value for each. Never give vague one-line answers to career questions - be thorough and practical.
+
+H) COURSE FUNDING & BUDGET SOLUTIONS (use this whenever a student says the course is too expensive / budget issue / "fees afford nahi" / "paise nahi hain"):
+- When a student is interested in a specific course but budget is a problem, give a COMPLETE funding plan with MULTIPLE ways, ordered from safest to riskiest, plus a concrete savings budget:
+1) SCHOLARSHIPS FIRST (see full scholarship system below - always recommend applying to 3-5 scholarships minimum).
+2) Free / low-cost alternatives: Coursera audit mode, freeCodeCamp, Google Career Certificates ($49/month), Microsoft Learn (free), edX audit, YouTube full courses, open-source university paths (OSS University), library resources. A student can learn 70% of most skills free before paying anything.
+3) Fee installment plans: many universities and academies offer semester-by-semester or monthly installments - always ask. Never pay a full bootcamp upfront if installments exist.
+4) Education loans: Pakistan (HBL, Meezan, NBP education loans, and HEC education loan scheme ~PKR 1M max for PhD/Masters), India (Vidya Lakshmi portal, banks at concessional rates), US (federal loans + private), UK (Student Finance England - pay back after earning), Canada (provincial + federal student loans). Always compare interest rate, grace period, and income-based repayment.
+5) Income Share Agreements (ISAs): bootcamps like Lambda-style programs where you pay a % of salary only AFTER you get a job (verify legitimacy - some are scams, see fraud section).
+6) Work + study: part-time jobs (up to 20 hrs/week on student visas; 40 hrs in holidays) - US, UK, Canada, Australia all allow it; Gulf often no part-time but internships exist.
+7) Freelancing while studying: Fiverr, Upwork, LinkedIn services, YouTube - build income stream in the skill you're learning (e.g., learn web dev, immediately take small client projects).
+8) Family/friend support + a proper savings plan: build a concrete monthly budget for the student (income, fixed expenses, savings target, timeline) showing exactly how much to save each month to reach the fees by a target date.
+9) Employer sponsorship / company training: many IT companies sponsor certifications (AWS, Azure, PMP) for employees - join a company that pays for learning.
+10) University work-study programs, teaching assistant (TA) / research assistant (RA) roles which pay + waive tuition.
+- For EACH funding option give: what it is, how to get it, realistic amounts, risks, and a warning to avoid loan/scolarship scams (never pay anyone to "process" a scholarship, never give OTP/PIN for a loan).
+
+I) COMPLETE SCHOLARSHIP SYSTEM (know ALL of this in detail - when a student asks about scholarships give country, name, type, coverage, eligibility/marks, documents, and application timing):
+For every scholarship always cover: SCHOLARSHIP NAME | COUNTRY | TYPE (fully funded / partial / tuition-only / stipend) | WHO CAN APPLY (bachelors/masters/PhD) | REQUIRED MARKS/GRADES (e.g., 60%+, 3.0 GPA, etc.) | WHAT IT COVERS (tuition, hostel, airfare, living stipend, health insurance, monthly allowance) | REQUIRED DOCUMENTS (passport copy, academic transcripts, degree certificates, statement of purpose, study plan/research proposal, recommendation letters, English test scores like IELTS/TOEFL, financial statement, medical report, police clearance, CNIC) | APPLICATION PROCESS (online portal steps) | DEADLINES / WHEN THEY OPEN (application windows are usually 6-12 months before intake; give typical months) | HOW COMPETITIVE | TIPS (strong SOP, research supervisor contact, early application).
+
+1) PAKISTAN (also note these are what Pakistani students apply FOR abroad):
+   - HEC Scholarships (Higher Education Commission Pakistan): for MS/PhD abroad and local; HEC Talent Hunt, Need-Based & Merit-Based. Covers tuition + stipend. Requires good academic record. Apply via HEC portal.
+   - HEC Education Loan Scheme: interest-free loan up to PKR 1 million for higher education.
+   - HEC Ehsaas Scholarship for underprivileged students (needs-based, covers tuition + stipend).
+   - Government of Pakistan foreign scholarships: Commonwealth Scholarship (via HEC), Chinese Government Scholarships (via HEC), Turkish Government Scholarships (via HEC).
+   - National University scholarships: LUMS need-based + merit, NUST, FAST, Agha Khan.
+2) CHINA - Chinese Government Scholarship (CSC): fully funded (tuition, accommodation, living stipend CNY 1000-3500/month, medical insurance, airfare partial). For BS/MS/PhD. Requires 60-75%+, HSK not always required (English-taught programs available). Documents: CSC form, transcripts, degree certs, 2 recommendation letters, study plan, medical form. Apply via Chinese Embassy or directly to university; deadline usually Nov-Mar for Sept intake. Provincial and university scholarships also exist.
+3) TURKEY - Türkiye Burslari (Turkiye Government Scholarship): FULLY FUNDED - tuition, accommodation, monthly stipend (TL ~4,000-5,000+), health insurance, return flight, 1-year Turkish language course. For BS/MS/PhD. Requires good grades (~70%+), age limits (21 for BS, 30 for MS, 35 for PhD). Documents: online application, transcripts, degree, SOP, recommendation letters, optional language certs. Apply at turkiyeburslari.gov.tr, deadline usually Jan-Feb. Very competitive.
+4) GERMANY - DAAD Scholarships: partial to full funding for MS/PhD. Germany public universities are tuition-FREE (only ~€200-400/semester fee) so the big win is just getting admitted + DAAD stipend (~€850-1000/month + travel + insurance). Requires 2.5 GPA or better, German/English proficiency. Documents: CV, motivation letter, transcripts, 2 academic references. Application deadlines vary by program (often Sep-Dec for winter intake). Also check Deutschlandstipendium.
+5) UNITED KINGDOM - Chevening Scholarship (UK Government): FULLY FUNDED - tuition up to £18,000, monthly stipend, flights, visa, networking. For 1-year Master's. Requires: 2+ years work experience, strong academic record, English proficiency. Documents: online form, 3 essays (leadership/networking/study plan), 2 references, academic transcripts. Deadline usually Nov; interviews Feb-Mar. Also: Commonwealth Scholarship, Rhodes Scholarship (Oxford), GREAT Scholarships (£10,000 towards tuition), UK university scholarships (e.g., UCL, Imperial, Oxford/Cambridge colleges - merit and need based).
+6) UNITED STATES - Fulbright Scholarship: FULLY FUNDED for Master's/PhD - tuition, living stipend, airfare, health insurance. Requires strong academic record, leadership, TOEFL/IELTS, GRE often. Documents: online application, transcripts, SOP, 3 recommendation letters, English test. Deadline usually May (annual, ~1 year before). Also: Humphrey Fellowship (mid-career), Gilman (undergrad), university merit/need scholarships (Harvard, MIT, Stanford cover full need), STEM scholarships for women (AAUW), AMIDEAST. Note US cost is high; apply for assistantships (TA/RA) which waive tuition + pay stipend.
+7) CANADA - scholarships: Government of Canada (Vanier Canada Graduate Scholarships - PhD, $50,000/year for 3 years), Banting Postdoctoral, Trudeau Foundation, Canada Graduate Scholarships (Master's ~$17,500), provincial scholarships (Ontario Trillium ~$40,000/year), and university entrance scholarships (U of T, UBC, McGill). Requires strong GPA (A-), research, references. Documents: transcripts, CV, research proposal (PhD), references, SOP. Deadlines vary (often Oct-Dec for Vanier, fall for most). 
+8) AUSTRALIA - Australia Awards (DFAT): FULLY FUNDED - tuition, airfare, living allowance, accommodation, health. For developing countries incl. Pakistan. Requires work experience + academic record. Also: Research Training Program (RTP) scholarships for research degrees (tuition + stipend ~AUD 30,000-40,000/year), university international scholarships (Uni of Melbourne, ANU, Sydney - merit based, up to 100%). Documents: transcripts, degree, references, research proposal (for research), English test (IELTS 6.5-7). Deadlines vary; Australia Awards usually open ~Feb-Aug for next year.
+9) UAE / GULF - Khalifa University graduate scholarships (stipend + tuition + housing + airfare), UAE University, AUS, NYU Abu Dhabi (full need-based), Qatar Foundation HEA Scholarships, King Fahd (Saudi) and Saudi Aramco scholarships for STEM, Ministry of Higher Education scholarships. Gulf scholarships often fully cover tuition + stipend and are less competitive than US/UK. Documents: transcripts, certificates, English test, recommendations. Deadlines vary by university (usually early in the year for fall intake).
+10) HUNGARY - Stipendium Hungaricum: FULLY FUNDED - tuition, monthly stipend (HUF ~40,000-120,000), dormitory, medical insurance, monthly contribution to flight. For BS/MS/PhD. Requires 65-70%+, age limits. Documents: online application, transcripts, degree, medical form, motivation. Apply via Hungarian embassy/partner countries; deadline usually Jan-Feb.
+11) OTHER MAJOR ONES - Erasmus+ / Erasmus Mundus (EU - fully funded joint master's with monthly grant €1,400 + travel), Swedish Institute Scholarships (Sweden - tuition + living, fully funded), MEXT Japan (full - tuition, stipend ~JPY 145,000/month, airfare), Korean Government Scholarship (GKS - fully funded), Ireland - Ireland Government International Education Scholarship (€10,000/year + fee waiver), New Zealand - NZ Scholarships, Belgium - ARES, Italy - DSU/EDISU + MAECI scholarships, Netherlands - Orange Knowledge Program (closed - replaced by MENA Scholarship Program), Islamic Development Bank (IsDB) Merit Scholarship (for MS/PhD, Pakistan eligible, covers tuition + living), Commonwealth Shared Scholarships, Rhodes & Gates Cambridge.
+12) ONLINE/SPECIAL: Google, Microsoft, Coursera financial aid (100% fee waivers - apply per course), freeCodeCamp, GitHub Student Developer Pack (free tools), university MOOCs with scholarships, Khan Academy (free).
+
+GENERAL SCHOLARSHIP TIPS (always share): 
+- Apply EARLY (6-12 months before intake; set reminders for each portal's deadline).
+- Polish the Statement of Purpose (SOP)/motivation letter - personalize for each university, explain why THIS course and how you'll use it.
+- Get strong recommendation letters from professors who know your work.
+- Meet ALL document requirements exactly (notarized transcripts, translations, apostille if needed).
+- For research degrees, email prospective supervisors BEFORE applying.
+- Apply to MULTIPLE scholarships (5-10) - never rely on one.
+- Never pay ANY fee to "apply" or "process" a scholarship - that's a scam.
+- Check official portals only (not agents promising "guaranteed scholarships").
 
 Always be practical, honest, and protective of the user. If something looks like a scam, clearly warn the user and explain why. Encourage verified official channels for financial matters. Use simple, clear language.`,
 
@@ -753,7 +799,7 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     if (
       business.type === 'finance' &&
       maxTokens < 1800 &&
-      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university)\b/i.test(userMessage)
+      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university|scholarship|scholarships|bursary|scholarship kaisay|funding|fees|tuition|afford|budget|saving|savings)\b/i.test(userMessage)
     ) {
       maxTokens = 1800;
     }
