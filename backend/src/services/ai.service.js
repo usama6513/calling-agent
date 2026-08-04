@@ -1,5 +1,6 @@
 const { groq, GROQ_MODEL } = require('../config/groq');
 const { GEMINI_API_KEY, GEMINI_MODELS } = require('../config/gemini');
+const { OPENROUTER_API_KEY, OPENROUTER_MODELS } = require('../config/openrouter');
 const prisma = require('../config/db');
 const mammoth = require('mammoth');
 const URLScanner = require('./url-scanner.service');
@@ -582,6 +583,60 @@ class AIService {
     throw lastError || new Error('All Gemini models failed');
   }
 
+  static async callOpenRouter(messages, maxTokens = 600, temperature = 0.7) {
+    if (!OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY not configured');
+    }
+    const systemParts = [];
+    const chatMessages = [];
+    for (const m of messages) {
+      if (m.role === 'system') {
+        systemParts.push(m.content);
+      } else {
+        chatMessages.push({ role: m.role, content: m.content });
+      }
+    }
+    const allMessages = [
+      ...(systemParts.length > 0 ? [{ role: 'system', content: systemParts.join('\n\n') }] : []),
+      ...chatMessages,
+    ];
+
+    let lastError = null;
+    for (const model of OPENROUTER_MODELS) {
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://calling-agent.app',
+            'X-Title': 'Calling Agent',
+          },
+          body: JSON.stringify({
+            model,
+            messages: allMessages,
+            temperature,
+            max_tokens: maxTokens,
+          }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          lastError = new Error(`OpenRouter ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`);
+          console.error(`[OpenRouter Chat] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+          continue;
+        }
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return text.trim();
+        lastError = new Error(`OpenRouter ${model} returned empty response`);
+      } catch (error) {
+        lastError = error;
+        console.error(`[OpenRouter Chat] ${model} Error:`, error.message);
+      }
+    }
+    throw lastError || new Error('All OpenRouter models failed');
+  }
+
   static async extractPdfText(buffer) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const { pathToFileURL } = require('url');
@@ -954,17 +1009,38 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     } catch (error) {
       const isRateLimit = error?.status === 429 || /rate limit|tokens per (minute|day)|rate_limit/i.test(String(error?.error?.message || error.message));
       console.error(`[Chat] Groq error: ${error?.error?.message || error.message}`);
-      if (isRateLimit && GEMINI_API_KEY) {
-        console.log('[Chat] Groq rate limited - falling back to Gemini');
+
+      if (isRateLimit) {
         let geminiMaxTokens = maxTokens;
         if (geminiMaxTokens < 1800 && business.type === 'finance') geminiMaxTokens = 1800;
-        const geminiText = await this.callGeminiText(messages, geminiMaxTokens, temperature);
-        if (geminiText) {
-          assistantMessage = this.stripThink(geminiText);
-          completion = { usage: { total_tokens: 0 } };
-        } else {
-          throw error;
+
+        if (GEMINI_API_KEY) {
+          try {
+            console.log('[Chat] Groq rate limited - falling back to Gemini');
+            const geminiText = await this.callGeminiText(messages, geminiMaxTokens, temperature);
+            if (geminiText) {
+              assistantMessage = this.stripThink(geminiText);
+              completion = { usage: { total_tokens: 0 } };
+            }
+          } catch (geminiError) {
+            console.error('[Chat] Gemini also failed:', geminiError.message);
+          }
         }
+
+        if (!assistantMessage && OPENROUTER_API_KEY) {
+          try {
+            console.log('[Chat] Gemini failed - falling back to OpenRouter');
+            const orText = await this.callOpenRouter(messages, geminiMaxTokens, temperature);
+            if (orText) {
+              assistantMessage = this.stripThink(orText);
+              completion = { usage: { total_tokens: 0 } };
+            }
+          } catch (orError) {
+            console.error('[Chat] OpenRouter also failed:', orError.message);
+          }
+        }
+
+        if (!assistantMessage) throw error;
       } else {
         throw error;
       }
@@ -1034,9 +1110,24 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     } catch (error) {
       const isRateLimit = error?.status === 429 || /rate limit|tokens per (minute|day)|rate_limit/i.test(String(error?.error?.message || error.message));
       console.error(`[generateResponse] Groq error: ${error?.error?.message || error.message}`);
-      if (isRateLimit && GEMINI_API_KEY) {
-        console.log('[generateResponse] Groq rate limited - falling back to Gemini');
-        content = this.stripThink(await this.callGeminiText(messages, maxTokens, temperature));
+      if (isRateLimit) {
+        if (GEMINI_API_KEY) {
+          try {
+            console.log('[generateResponse] Groq rate limited - falling back to Gemini');
+            content = this.stripThink(await this.callGeminiText(messages, maxTokens, temperature));
+          } catch (geminiError) {
+            console.error('[generateResponse] Gemini also failed:', geminiError.message);
+          }
+        }
+        if (!content && OPENROUTER_API_KEY) {
+          try {
+            console.log('[generateResponse] Gemini failed - falling back to OpenRouter');
+            content = this.stripThink(await this.callOpenRouter(messages, maxTokens, temperature));
+          } catch (orError) {
+            console.error('[generateResponse] OpenRouter also failed:', orError.message);
+          }
+        }
+        if (!content) throw error;
       } else {
         throw error;
       }
