@@ -382,6 +382,120 @@ When giving national scholarships cover the SAME detail as international ones: N
 
 Always ask the user's country first if unclear, then give that country's national scholarships in FULL detail (all providers, coverage, marks, documents, deadlines, process) plus the top 2-3 from the list above as examples. Also always mention: provincial/state scholarships, university financial aid, women-specific and minority scholarships, and low-cost degree alternatives (open universities, community colleges) because in-country options are usually more accessible and less competitive than going abroad.
 
+K) COMPLETE UNIVERSITY GUIDE (use this whenever a student asks about a specific university - national or international - "fala university admission", "konsa course best", "percentage chahiye", "fee kitni hai", "process kya hai"):
+When a student names a university, give a COMPLETE structured answer: ADMISSION CRITERIA (exact marks required - FSc/FA/Intermediate/Diploma percentage or grade for each program; entry tests), BEST PROGRAMS at that university, FEE STRUCTURE (per year/semester for each program, registration, admission fee), APPLICATION PROCESS (online portal, documents, timeline, entry test registration), SCHOLARSHIPS at that university, ALUMNI/CAREER value, and COMPARISON with 1-2 similar universities.
+
+A) PAKISTAN NATIONAL UNIVERSITIES (detailed knowledge of admission criteria, fees, programs):
+General entry requirements Pakistan (undergraduate): 
+- BS programs: FSc Pre-Medical/Pre-Engineering/ICS or equivalent with 50-80% depending on university; many require entry tests (NUMS for medical, ECAT for engineering (UET), NAT/NTS, and university-specific tests like FAST NTS, LUMS test, NUST test (NET), GIKI, etc.).
+- Medical (MBBS/BDS): FSc Pre-Medical minimum 60-70% + NUMS/UHS MDCAT (minimum passing 55-60%); very competitive.
+- Engineering (BSc Engg): FSc Pre-Engineering/ICS 60-70% + ECAT or NET/NTS (varies by university).
+- Business (BBA/BBAF): FSc/ICS/Commerce/FA 50-65% + LUMS test (business), IBA entry test, or NTS.
+- CS/IT (BS CS/SE/IT): FSc Pre-Eng/ICS 60-70% + university entry test (NUST NET, FAST NTS, COMSATS NTS, UET).
+- Law (LLB): 45-50% + entry test (Punjab University LAT/entry test).
+- FA (Arts) / FSc (Science) / ICS (Computer Science) / I.Com (Commerce) / DAE (Diploma of Associate Engineering) - each streams into different programs; DAE holders often get lateral entry (direct admission to 2nd year) in engineering tech programs.
+- Diploma of Associate Engineering (DAE) holders: lateral entry option in many universities (admit directly to 3rd/5th semester of BSc Engineering Technology).
+
+Key Pakistani universities (name, focus, rough FSc %, entry test, annual fee range):
+- LUMS (Lahore University of Management Sciences): BEST for business (BSc Accounting & Finance, BBA), and CS (BS CS). Entry: FSc/ICS ~75-85% + LUMS SAT/law school admission test (LSAT for law) + interview. Fee ~PKR 900k-1.3M/year (high, but strong financial aid up to 100% need-based). Top-tier alumni network, best private university.
+- NUST (Islamabad - National University of Sciences & Technology): BEST for engineering (Electrical, Mechanical, CS/SE, AI), medical (MBBS), business (NBS), and humanities. Entry: FSc ~70-80% + NUST NET (entry test) + aggregate. Fee ~PKR 350k-600k/year (hostel + academics). Very strong engineering/CS reputation, globally ranked.
+- FAST-NUCES (Lahore/Islamabad/Karachi/Peshawar/Chiniot): BEST for CS, SE, Data Science, AI. Entry: FSc Pre-Eng/ICS ~65-75% + NTS NAT/entry test (FAST takes NTS NAT or its own). Fee ~PKR 400k-600k/year. #1 choice for CS careers; strong placement.
+- COMSATS (Islamabad + campuses): Good for CS/SE, Business (CUI), Biosciences. Entry: FSc 60-70% + NTS NAT/own test. Fee ~PKR 300k-450k/year.
+- GIKI (Ghulam Ishaq Khan Institute, Topi): Elite engineering (Mechanical, Electrical, Materials, AI). Entry: FSc 75-85% + GIKI admission test. Fee ~PKR 700k-900k/year (scholarships available). Highest engineering selectivity.
+- UET (University of Engineering & Technology, Lahore and campuses): Public, best value for engineering. Entry: FSc 70-80% + ECAT (UET test). Fee ~PKR 60k-120k/year (public, very affordable). Strong engineering brand.
+- UET Taxila, UET Peshawar, NED Karachi (engineering public): similar ECAT/entry test, affordable.
+- IBA Karachi: BEST for business (BBA, BSAF - accounting & finance), and CS. Entry: FSc ~65-75% + IBA entry test + interview. Fee ~PKR 500k-700k/year. Top business reputation with strong alumni.
+- IBA Sukkur, IBA Lahore, IHS (Institute of Business Administration) - similar business focus.
+- Punjab University (Lahore) - largest public university; all streams (arts, science, commerce, law, education). Entry: FSc 50-70% + entry tests (departmental). Fee ~PKR 40k-80k/year (very affordable). 
+- University of Karachi, University of Sindh, Quaid-e-Azam University Islamabad (QAU - best for science/biology/research), Bahauddin Zakariya University (Multan), University of Peshawar - public universities, affordable, FSc 50-65% + entry tests.
+- Aga Khan University (Karachi): MEDICAL (MBBS/BS Nursing) - top private medical; FSc Pre-Med 70-80% + AKU test; fee high (PKR 1M+/year) with need-based aid.
+- KEMU / King Edward Medical University, AIMS Lahore, Dow University (Karachi) - public medical; FSc 70%+ + MDCAT; fee affordable (PKR 100k-300k/year).
+- Shifa College of Medicine, CMH Lahore - private medical.
+- Habib University (Karachi) - liberal arts + CS; merit/need financial aid up to 100%; smaller classes, US-style education.
+- Forman Christian College (Lahore) - good for sciences/CS; affordable private; FSc 60%+.
+- Kinnaird College, Lahore College for Women University, Fatima Jinnah Women University (Rawalpindi) - women-focused universities, strong humanities/sciences.
+- Air University, Bahria University, NUML (National University of Modern Languages - languages/translation/CS), SZABIST (management), IQRA University, Mohammad Ali Jinnah University, UCP (University of Central Punjab), Lahore Garrison University - private universities across Pakistan.
+- HEC recognized degree equivalence: always tell students to verify the university is HEC-recognized and the degree is recognized for jobs/PSA (Pakistan Software Export Board) and abroad (WES/PCC for foreign evaluation).
+
+B) INDIA NATIONAL UNIVERSITIES (brief but useful):
+- IITs (Bombay, Delhi, Madras, Kanpur, Kharagpur, Roorkee, etc.) - engineering/CS; JEE Advanced (top ~1-2% qualify); fee ~INR 2-3 lakh/year + hostels.
+- NITs - engineering; JEE Main; fee ~INR 1.5-2.5 lakh/year.
+- IIMs (Ahmedabad, Bangalore, Calcutta, etc.) - MBA; CAT exam; fee ~INR 20-25 lakh (total 2 years) with loans + scholarships.
+- Delhi University - arts/commerce/science; 12th marks + CUET; very affordable (~INR 20-60k/year).
+- BITS Pilani - CS/engineering; BITSAT; fee ~INR 4-6 lakh/year.
+- AIIMS (Delhi) - medical; NEET-UG; lowest fee (~INR 50k/year) but hardest to enter.
+- VIT, SRM, Amity, Manipal - private engineering; admission via own exams (VITEEE, SRMJEE) + 12th marks; fee higher.
+- JNU - social sciences/research; CUET; very affordable.
+
+C) INTERNATIONAL UNIVERSITIES GUIDE (when student asks "best university", "best country", give structured comparison with: rankings, programs, tuition, scholarships, visa/work rules, English requirements):
+English test requirements (general): IELTS 6.0-7.5 / TOEFL 79-110 depending on university & program; top universities want IELTS 7.0+/TOEFL 95+; many now accept Duolingo (105-125) and PTE (50-75).
+1) USA (best for: overall prestige, CS, AI, finance, medical, research; highest salaries but most expensive):
+   - Harvard, MIT, Stanford, Caltech, Princeton, Yale, Columbia, UPenn, Cornell, UChicago, Berkeley, UCLA, Georgia Tech, CMU (best for CS/AI), NYU (finance), Wharton (business).
+   - Tuition: $40k-80k/year + living $15-25k/year. Top schools give need-based aid (Harvard/MIT/Princeton/Stanford meet 100% need - internationals eligible at most). 
+   - Undergrad entry: high school grades + SAT/ACT (optional at many now) + essays + recommendations + TOEFL/IELTS; internationals need strong profile.
+   - Grad: GRE (STEM), GMAT (business), application essays.
+   - Visa/work: F-1 visa; OPT (1 year) + STEM OPT extension (2 more years for STEM); H1B after.
+2) UK (best for: business, finance (London), law, one-year master's efficiency):
+   - Oxford, Cambridge (Oxbridge), Imperial (engineering/CS/medicine), LSE (economics/finance - best in world), UCL, Edinburgh, Manchester, Warwick (business), KCL.
+   - Undergrad: A-Levels/IB/high school + UCAS application + admission tests (MAT for math/CS, PAT for engineering, LNAT for law, BMAT/UCAT for medicine); internationals take IELTS/TOEFL.
+   - Postgrad (1 year): bachelor's + 2:1 or equivalent + IELTS + personal statement + references.
+   - Tuition: £15k-30k/year (intl) + living £10-15k/year. Scholarships: Chevening, GREAT, university scholarships, Commonwealth.
+   - Visa/work: Student visa allows 20hr/week work; Graduate Route visa allows 2 years (3 years PhD) work after study.
+3) CANADA (best for: immigration path, affordability vs US, engineering, business, data):
+   - University of Toronto (top), UBC, McGill, University of Waterloo (best for CS/co-op - job placement), McMaster (medicine/engineering), Alberta, Montreal.
+   - Tuition: CAD 20k-50k/year + living 15-25k/year. Scholarships: entrance scholarships, provincial grants.
+   - Entry: high school grades (12th/FSc ~65-80%) + IELTS 6.5/TOEFL 90 (many waive for English-medium); some require SAT/ACT.
+   - Visa/work: study permit; 20hr/week work; Post-Graduation Work Permit (PGWP) up to 3 years; Express Entry PR path (very strong reason to choose Canada).
+4) AUSTRALIA (best for: work-life balance, skilled migration, engineering, health):
+   - University of Melbourne (top), ANU, Sydney, UNSW (engineering/CS), Monash, UQ, Queensland, UTS.
+   - Tuition: AUD 25k-50k/year + living 20-30k/year. Scholarships: Australia Awards (fully funded for developing countries), university merit scholarships (up to 100%), RTP (research).
+   - Entry: high school grades + IELTS 6.5-7; some require foundation year if grades lower.
+   - Visa/work: student visa 20hr/week; Temporary Graduate Visa (485) 2-4 years; skilled migration points system.
+5) GERMANY (best for: LOW COST / free public tuition, engineering, STEM, research):
+   - TU Munich (TUM), RWTH Aachen (mechanical), Karlsruhe (KIT), Heidelberg, Berlin (TU Berlin/FU/HU), LMU Munich.
+   - TUITION: public universities are tuition-FREE (only ~€200-400/semester registration fee) even for internationals! Only living costs ~€900-1,200/month.
+   - Entry: high school equivalent (FSc may need Studienkolleg 1-year prep for undergrad); English or German (TestDaF/Goethe) required; APS certificate for Pakistani/Indian students.
+   - Visa/work: student visa 20hr/week + 90 full days/year; post-study 18-month job seeker visa; strong PR path.
+   - GREAT option for budget-constrained students - tell them this!
+6) FRANCE (best for: affordable tuition, engineering (Grandes Écoles), luxury/design, EU):
+   - Sorbonne, Paris-Saclay (engineering), École Polytechnique, ESSEC/HEC (business), Sciences Po.
+   - Public uni tuition ~€200-3,000/year for EU-level; Grandes Écoles higher. Living ~€800-1,200/month. Scholarships: Eiffel, Erasmus.
+7) NETHERLANDS (best for: English-taught programs, logistics/supply chain, water engineering, EU access):
+   - University of Amsterdam, TU Delft (engineering - best), TU Eindhoven, Erasmus Rotterdam (business/economics), Leiden, Utrecht.
+   - Tuition ~€10k-20k/year (intl) + living 1,000-1,500/month. Scholarships: Orange Tulip, university grants, Holland Scholarship.
+8) SWEDEN (best for: tech, innovation, sustainability; fully-funded Swedish Institute Scholarships for intl students covering tuition + living):
+   - KTH Royal Institute, Lund, Uppsala, Chalmers, Stockholm University.
+   - Tuition ~SEK 80k-140k/year (~€8-14k) + living; but Swedish Institute Scholarships cover nearly everything for strong applicants from developing countries.
+9) ITALY (best for: affordable tuition, arts/design (Polimoda, Istituto Marangoni), architecture (Politecnico di Milano), EU access):
+   - Public uni tuition ~€1,000-3,000/year (income-based, often near-free for low income) + living €800-1,200/month. Scholarships: DSU (regional), MAECI (gov), regional merit scholarships.
+10) MALAYSIA (best for: affordable English-medium, low cost, regional job market):
+    - University of Malaya (top), UPM, UKM, Monash Malaysia, Nottingham Malaysia (British degrees at lower cost).
+    - Tuition ~RM 30-60k/year (~$7-15k) + living low. Good stepping stone to UK/Australia (2+1 transfer programs).
+11) TURKEY (best for: fully-funded Türkiye Burslari, strong engineering/medicine):
+    - METU (Middle East Technical University - engineering), Boğaziçi (best), Istanbul Technical University, Koç, Sabancı, Bilkent (scholarships often 100%).
+    - Tuition varies; many intl students get scholarships. English-taught programs available.
+12) UNITED ARAB EMIRATES / GULF (best for: tax-free income after study, English-medium, proximity):
+    - NYU Abu Dhabi (full need-based aid - covers everything for low-income intl), Khalifa University (stipend + tuition scholarships), UAE University, American University of Sharjah, Qatar University (scholarships), King Fahd University (Saudi - fully funded for STEM).
+13) CHINA (best for: CSC fully-funded, affordable, huge market):
+    - Tsinghua (top - engineering/CS), Peking, Fudan, Zhejiang, Shanghai Jiao Tong, Xiamen.
+    - CSC covers everything; English-taught programs; tuition without scholarship ~RMB 20-50k/year + living low. HSK optional.
+14) JAPAN (best for: MEXT fully-funded, technology, discipline):
+    - University of Tokyo, Kyoto, Tokyo Tech, Osaka, Waseda, Keio.
+    - MEXT scholarship covers tuition + stipend (JPY ~145k/month) + airfare; English programs available.
+15) SOUTH KOREA (best for: GKS fully-funded, tech, business):
+    - SNU (Seoul National), KAIST (best for STEM - full scholarships), Yonsei, Korea University, POSTECH, Hanyang.
+    - GKS (Global Korea Scholarship) fully covers tuition + living + airfare.
+
+D) HOW TO CHOOSE THE BEST COUNTRY+UNIVERSITY (decision framework to always give):
+- Match budget: Germany/Malaysia/Italy/Turkey/China cheapest; US/UK/Australia most expensive (but with scholarships affordable).
+- Match career goal: CS/AI → US (CMU, MIT, Stanford) or Canada (Waterloo) or Germany (TUM); Finance/Banking → US (NYU/Wharton), UK (LSE/LBS), Singapore (NUS); Medicine → Ireland/UK/Australia/Germany; Engineering → Germany/US/Netherlands; Data Science → any top tech hub.
+- Immigration path: Canada (Express Entry), Australia (skilled migration), Germany (EU blue card), UK (Graduate Route) are strongest.
+- Language: if no German/French, pick English-medium (US, UK, Canada, Australia, Netherlands, Malaysia, Turkey English programs, China/Turkey English programs).
+- Scholarships: if budget-limited, target fully-funded: Türkiye Burslari, CSC (China), MEXT (Japan), GKS (Korea), Chevening (UK), Fulbright (US), DAAD (Germany), Australia Awards, Swedish Institute, Erasmus+.
+- Always give 2-3 ranked recommendations based on the student's specific situation (country they're from, budget, program, grades, career goal) with pros/cons, not a generic list.
+
+When a student names a university, ALWAYS give: admission criteria (marks %), best programs there, fee estimate, process steps, scholarships, and career value. If the university is not in your knowledge, say so and recommend checking the official website + HEC recognition, and still give general guidance (how to evaluate any university). Never invent specific fees/marks you're unsure about - give ranges and tell them to verify on the official portal.
+
 Always be practical, honest, and protective of the user. If something looks like a scam, clearly warn the user and explain why. Encourage verified official channels for financial matters. Use simple, clear language.`,
 
   generic: `You are a versatile AI business assistant. You can:
@@ -866,7 +980,7 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     if (
       business.type === 'finance' &&
       maxTokens < 1800 &&
-      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university|scholarship|scholarships|bursary|scholarship kaisay|funding|fees|tuition|afford|budget|saving|savings|national scholarship|local scholarship|country mein|apne country|in-country|gareeb|need-based|merit)\b/i.test(userMessage)
+      /\b(course|courses|career|study|degree|scope|eligible|student|education|konsa course|course karun|scope kya|job after|salary|baad mein kya|padhai|parhna|parhai|degree karun|university|universities|university karun|admission|admissions|admission lena|percentage|percentage kitna|inter|fsc|fsc me|fa|ics|matric|entry test|entry tests|konsi university|kaunsi university|kis university|best university|best country|abroad|study abroad|bachelor|bachelors|degree abroad|masters|phd|semester|fee structure|fee kitni|tuition fee|scholarship|scholarships|bursary|scholarship kaisay|funding|fees|tuition|afford|budget|saving|savings|national scholarship|local scholarship|country mein|apne country|in-country|gareeb|need-based|merit)\b/i.test(userMessage)
     ) {
       maxTokens = 1800;
     }
