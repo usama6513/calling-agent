@@ -522,6 +522,66 @@ class AIService {
     return `[Image file provided but vision API failed (${lastStatus}).]`;
   }
 
+  static async callGeminiText(messages, maxTokens = 600, temperature = 0.7) {
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+    const systemParts = [];
+    const contents = [];
+    for (const m of messages) {
+      if (m.role === 'system') {
+        systemParts.push(m.content);
+      } else {
+        contents.push({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        });
+      }
+    }
+    const body = {
+      systemInstruction: { parts: [{ text: systemParts.join('\n\n') }] },
+      contents,
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
+    };
+
+    const models = GEMINI_MODELS.length > 0 ? GEMINI_MODELS : ['gemini-flash-latest'];
+    let lastError = null;
+    for (const model of models) {
+      const attempts = model === models[0] ? 2 : 1;
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }
+          );
+          if (!res.ok) {
+            const errText = await res.text();
+            lastError = new Error(`Gemini ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`);
+            console.error(`[Gemini Chat] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+            if (res.status === 429 || res.status === 503) {
+              await new Promise((r) => setTimeout(r, 800 * attempt));
+              continue;
+            }
+            break;
+          }
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text.trim();
+          lastError = new Error(`Gemini ${model} returned empty response`);
+        } catch (error) {
+          lastError = error;
+          console.error(`[Gemini Chat] ${model} Error:`, error.message);
+          if (attempt < attempts) await new Promise((r) => setTimeout(r, 800 * attempt));
+        }
+      }
+    }
+    throw lastError || new Error('All Gemini models failed');
+  }
+
   static async extractPdfText(buffer) {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const { pathToFileURL } = require('url');
@@ -881,12 +941,33 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
       });
     };
 
-    let completion = await callGroq(maxTokens);
-    let assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
-
-    if (!assistantMessage && maxTokens < 2048) {
-      completion = await callGroq(2048);
+    let completion;
+    let assistantMessage;
+    try {
+      completion = await callGroq(maxTokens);
       assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
+
+      if (!assistantMessage && maxTokens < 2048) {
+        completion = await callGroq(2048);
+        assistantMessage = this.stripThink(completion.choices[0]?.message?.content);
+      }
+    } catch (error) {
+      const isRateLimit = error?.status === 429 || /rate limit|tokens per (minute|day)|rate_limit/i.test(String(error?.error?.message || error.message));
+      console.error(`[Chat] Groq error: ${error?.error?.message || error.message}`);
+      if (isRateLimit && GEMINI_API_KEY) {
+        console.log('[Chat] Groq rate limited - falling back to Gemini');
+        let geminiMaxTokens = maxTokens;
+        if (geminiMaxTokens < 1800 && business.type === 'finance') geminiMaxTokens = 1800;
+        const geminiText = await this.callGeminiText(messages, geminiMaxTokens, temperature);
+        if (geminiText) {
+          assistantMessage = this.stripThink(geminiText);
+          completion = { usage: { total_tokens: 0 } };
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
     }
 
     if (!assistantMessage) {
@@ -940,12 +1021,25 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
       });
     };
 
-    let completion = await callGroq(maxTokens);
-    let content = this.stripThink(completion.choices[0]?.message?.content);
-
-    if (!content && maxTokens < 2048) {
-      completion = await callGroq(2048);
+    let completion;
+    let content;
+    try {
+      completion = await callGroq(maxTokens);
       content = this.stripThink(completion.choices[0]?.message?.content);
+
+      if (!content && maxTokens < 2048) {
+        completion = await callGroq(2048);
+        content = this.stripThink(completion.choices[0]?.message?.content);
+      }
+    } catch (error) {
+      const isRateLimit = error?.status === 429 || /rate limit|tokens per (minute|day)|rate_limit/i.test(String(error?.error?.message || error.message));
+      console.error(`[generateResponse] Groq error: ${error?.error?.message || error.message}`);
+      if (isRateLimit && GEMINI_API_KEY) {
+        console.log('[generateResponse] Groq rate limited - falling back to Gemini');
+        content = this.stripThink(await this.callGeminiText(messages, maxTokens, temperature));
+      } else {
+        throw error;
+      }
     }
 
     return content;
