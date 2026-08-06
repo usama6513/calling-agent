@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { authFetch } from '@/lib/api';
 
 interface Stats {
   totalBusinesses: number;
@@ -12,8 +13,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://backend-seven-chi-71.vercel.app/api/business?limit=100')
-      .then((r) => r.json())
+    authFetch('/api/business?limit=100')
       .then((d) => setStats({ totalBusinesses: d.pagination?.total || 0, totalConversations: 0 }))
       .catch(() => {})
       .finally(() => setLoading(false));

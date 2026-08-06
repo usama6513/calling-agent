@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ConversationService = require('../services/conversation.service');
 const asyncHandler = require('../middleware/asyncHandler');
+const { protect } = require('../middleware/auth.middleware');
 
 router.get('/:businessId', asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -32,7 +33,7 @@ router.get('/detail/:id', asyncHandler(async (req, res) => {
   });
 }));
 
-router.put('/:id/close', asyncHandler(async (req, res) => {
+router.put('/:id/close', protect, asyncHandler(async (req, res) => {
   const conversation = await ConversationService.close(req.params.id);
 
   res.json({
@@ -41,7 +42,7 @@ router.put('/:id/close', asyncHandler(async (req, res) => {
   });
 }));
 
-router.put('/:id/transfer', asyncHandler(async (req, res) => {
+router.put('/:id/transfer', protect, asyncHandler(async (req, res) => {
   const conversation = await ConversationService.transfer(req.params.id);
 
   res.json({

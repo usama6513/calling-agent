@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { authFetch } from '@/lib/api';
 
 interface Message {
   id: string;
@@ -31,8 +32,7 @@ export default function ConversationsPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
 
   useEffect(() => {
-    fetch('https://backend-seven-chi-71.vercel.app/api/business')
-      .then((r) => r.json())
+    authFetch('/api/business')
       .then((d) => { setBusinesses(d.data || []); if (d.data?.length) setSelectedBusiness(d.data[0].id); })
       .catch(() => {});
   }, []);
@@ -44,8 +44,7 @@ export default function ConversationsPage() {
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/${selectedBusiness}`);
-      const data = await res.json();
+      const data = await authFetch(`/api/conversations/${selectedBusiness}`);
       setConversations(data.data || []);
     } catch {
       setConversations([]);
@@ -55,8 +54,7 @@ export default function ConversationsPage() {
 
   const loadDetail = async (id: string) => {
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/detail/${id}`);
-      const data = await res.json();
+      const data = await authFetch(`/api/conversations/detail/${id}`);
       setSelectedConversation(data.data);
     } catch {}
   };

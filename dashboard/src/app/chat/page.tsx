@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { authFetch } from '@/lib/api';
 
 interface Attachment {
   id: string;
@@ -114,8 +115,7 @@ export default function ChatPage() {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/business');
-      const data = await res.json();
+      const data = await authFetch('/api/business');
       setBusinesses(data.data || []);
       if (data.data?.length > 0) setSelectedBusiness(data.data[0].id);
     } catch (error) {

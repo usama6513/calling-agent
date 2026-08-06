@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: '📊' },
@@ -15,7 +16,14 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   return (
     <>
@@ -75,11 +83,17 @@ export default function Sidebar() {
 
         <div className="p-4 border-t border-gray-800">
           <div className="bg-gray-800/50 rounded-xl p-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <span className="text-sm text-green-400 font-medium">System Online</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Groq AI + Neon DB</p>
+            <p className="text-xs text-gray-500 mb-2 truncate">{user?.email}</p>
+            <button
+              onClick={handleLogout}
+              className="w-full px-3 py-2 bg-gray-700/50 text-gray-300 text-sm font-medium rounded-lg hover:bg-red-500/20 hover:text-red-300 transition-colors"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </aside>

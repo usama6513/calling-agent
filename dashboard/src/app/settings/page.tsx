@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://backend-seven-chi-71.vercel.app';
+import { authFetch } from '@/lib/api';
 
 interface Business {
   id: string;
@@ -50,12 +49,10 @@ export default function SettingsPage() {
 
   const loadData = async () => {
     try {
-      const [bizRes, modelRes] = await Promise.all([
-        fetch(`${API_BASE}/api/business`),
-        fetch(`${API_BASE}/api/groq/models`),
+      const [bizData, modelData] = await Promise.all([
+        authFetch('/api/business'),
+        authFetch('/api/groq/models'),
       ]);
-      const bizData = await bizRes.json();
-      const modelData = await modelRes.json();
       setBusinesses(bizData.data || []);
       setModels(modelData.data || []);
       if (bizData.data?.length) {
@@ -76,17 +73,15 @@ export default function SettingsPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch(`${API_BASE}/api/business/${selectedBusinessId}`, {
+      const data = await authFetch(`/api/business/${selectedBusinessId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           aiModel: settings.aiModel || null,
           maxTokens: settings.maxTokens,
           temperature: settings.temperature,
         }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (data.success) {
         setMessage({ type: 'success', text: 'AI settings saved! Applied to this business.' });
         setBusinesses((prev) =>
           prev.map((b) =>

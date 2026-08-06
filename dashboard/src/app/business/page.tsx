@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { authFetch } from '@/lib/api';
 
 interface Business {
   id: string;
@@ -49,9 +50,7 @@ export default function BusinessPage() {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('https://backend-seven-chi-71.vercel.app/api/business');
-      if (!res.ok) throw new Error('Server error');
-      const data = await res.json();
+      const data = await authFetch('/api/business');
       setBusinesses(data.data || []);
     } catch (error) {
       console.error('Failed to fetch businesses:', error);
@@ -69,16 +68,14 @@ export default function BusinessPage() {
       try { body.rules = formData.rules ? JSON.parse(formData.rules) : {}; } catch { body.rules = {}; }
 
       const url = editingId
-        ? `https://backend-seven-chi-71.vercel.app/api/business/${editingId}`
-        : 'https://backend-seven-chi-71.vercel.app/api/business';
+        ? `/api/business/${editingId}`
+        : '/api/business';
       const method = editingId ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const data = await authFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (data.success) {
         alert(editingId ? 'Business updated successfully!' : 'Business created successfully!');
         setShowModal(false);
         setEditingId(null);
@@ -98,8 +95,7 @@ export default function BusinessPage() {
     let kb = '';
     let rules = '';
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${business.id}`);
-      const data = await res.json();
+      const data = await authFetch(`/api/business/${business.id}`);
       if (data.success && data.data) {
         kb = data.data.knowledgeBase ? JSON.stringify(data.data.knowledgeBase, null, 2) : '';
         rules = data.data.rules ? JSON.stringify(data.data.rules, null, 2) : '';
@@ -133,14 +129,10 @@ export default function BusinessPage() {
     }
     setDeleting(true);
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/business/${deleteTarget.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setDeleteTarget(null);
-        setDeleteConfirmText('');
-        fetchBusinesses();
-      } else {
-        alert('Failed to delete business.');
-      }
+      await authFetch(`/api/business/${deleteTarget.id}`, { method: 'DELETE' });
+      setDeleteTarget(null);
+      setDeleteConfirmText('');
+      fetchBusinesses();
     } catch (error) {
       alert('Failed to delete business.');
       console.error('Failed to delete business:', error);
