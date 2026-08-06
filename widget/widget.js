@@ -400,6 +400,185 @@
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
       }
+
+      .ca-home-screen {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .ca-home-screen.ca-hidden {
+        display: none;
+      }
+
+      .ca-home-hero {
+        text-align: center;
+        padding: 24px 20px 8px;
+      }
+
+      .ca-home-hero .ca-home-icon {
+        font-size: 42px;
+        margin-bottom: 8px;
+      }
+
+      .ca-home-hero h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1e293b;
+      }
+
+      .ca-home-hero p {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: #64748b;
+      }
+
+      .ca-home-actions {
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .ca-home-new-chat {
+        padding: 14px;
+        border: none;
+        border-radius: 14px;
+        background: ${colors.gradient};
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      }
+
+      .ca-home-new-chat:hover {
+        transform: scale(1.02);
+      }
+
+      .ca-home-old-chat {
+        padding: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        background: white;
+        color: ${colors.primary};
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+
+      .ca-home-old-chat:hover {
+        background: #f1f5f9;
+        border-color: ${colors.primary};
+      }
+
+      .ca-history-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 20px 16px;
+      }
+
+      .ca-history-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
+        padding: 10px 0 6px;
+      }
+
+      .ca-history-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+
+      .ca-history-item:hover {
+        background: #eef2ff;
+        border-color: ${colors.primary};
+      }
+
+      .ca-history-item .ca-hi-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: ${colors.light};
+        color: ${colors.primary};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .ca-history-item .ca-hi-text {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .ca-history-item .ca-hi-text .ca-hi-preview {
+        font-size: 13px;
+        color: #334155;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .ca-history-item .ca-hi-text .ca-hi-meta {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 2px;
+      }
+
+      .ca-history-empty {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+        padding: 24px 0;
+      }
+
+      .ca-history-loading {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+        padding: 24px 0;
+      }
+
+      .ca-home-back {
+        align-self: flex-start;
+        background: none;
+        border: none;
+        color: ${colors.primary};
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 8px 20px;
+      }
+
+      .ca-history-back {
+        align-self: flex-start;
+        background: none;
+        border: none;
+        color: ${colors.primary};
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 20px;
+      }
+
+      .ca-chat-messages.ca-hidden,
+      .ca-chat-input-area.ca-hidden {
+        display: none;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -427,6 +606,18 @@
         <div class="ca-chat-messages" id="ca-messages">
           <div class="ca-message ca-bot">${CONFIG.greeting}</div>
         </div>
+        <div class="ca-home-screen" id="ca-home-screen">
+          <div class="ca-home-hero">
+            <div class="ca-home-icon">🤖</div>
+            <h3>${CONFIG.title}</h3>
+            <p>${CONFIG.subtitle}</p>
+          </div>
+          <div class="ca-home-actions">
+            <button class="ca-home-new-chat" id="ca-home-new">🆕 New Chat</button>
+            <button class="ca-home-old-chat" id="ca-home-old">📁 Previous Chats</button>
+          </div>
+          <div class="ca-history-list" id="ca-history-list" style="display:none"></div>
+        </div>
         <div class="ca-chat-input-area">
           <button class="ca-attach-btn" id="ca-attach" aria-label="Attach file">📎</button>
           <input type="text" id="ca-input" placeholder="${CONFIG.placeholder}" autocomplete="off" />
@@ -444,6 +635,8 @@
     document.getElementById('ca-toggle').addEventListener('click', toggleChat);
     document.getElementById('ca-close').addEventListener('click', toggleChat);
     document.getElementById('ca-new-chat').addEventListener('click', startNewChat);
+    document.getElementById('ca-home-new').addEventListener('click', startNewChat);
+    document.getElementById('ca-home-old').addEventListener('click', showHistory);
     document.getElementById('ca-send').addEventListener('click', sendMessage);
     document.getElementById('ca-mic').addEventListener('click', toggleVoiceInput);
     document.getElementById('ca-attach').addEventListener('click', () => {
@@ -463,6 +656,7 @@
     if (isOpen) {
       chatWindow.classList.add('ca-open');
       button.innerHTML = '✕';
+      showHome();
       document.getElementById('ca-input').focus();
     } else {
       chatWindow.classList.remove('ca-open');
@@ -470,8 +664,19 @@
     }
   }
 
+  function showHome() {
+    document.getElementById('ca-home-screen').classList.remove('ca-hidden');
+    document.getElementById('ca-messages').classList.add('ca-hidden');
+    document.getElementById('ca-chat-input-area').classList.add('ca-hidden');
+  }
+
+  function showChat() {
+    document.getElementById('ca-home-screen').classList.add('ca-hidden');
+    document.getElementById('ca-messages').classList.remove('ca-hidden');
+    document.getElementById('ca-chat-input-area').classList.remove('ca-hidden');
+  }
+
   function startNewChat() {
-    if (!confirm('Nayi chat shuru karni hai? Purani chat history save rahegi.')) return;
     saveConversationId(null);
     try {
       localStorage.removeItem(storageKey);
@@ -480,7 +685,102 @@
     messages.innerHTML = `<div class="ca-message ca-bot">${CONFIG.greeting}</div>`;
     pendingAttachment = null;
     document.getElementById('ca-input').value = '';
+    showChat();
     document.getElementById('ca-input').focus();
+  }
+
+  async function showHistory() {
+    const home = document.getElementById('ca-home-screen');
+    const actions = home.querySelector('.ca-home-actions');
+    const list = document.getElementById('ca-history-list');
+    const hero = home.querySelector('.ca-home-hero');
+
+    actions.style.display = 'none';
+    hero.style.display = 'none';
+    list.style.display = 'block';
+    list.innerHTML = '<div class="ca-history-back" id="ca-history-back">← Back</div><div class="ca-history-loading">Loading your chats...</div>';
+
+    document.getElementById('ca-history-back').addEventListener('click', () => {
+      actions.style.display = 'flex';
+      hero.style.display = 'block';
+      list.style.display = 'none';
+      list.innerHTML = '';
+    });
+
+    try {
+      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/${CONFIG.businessId}?limit=10`);
+      const data = await res.json();
+      const convos = data.data || [];
+      list.innerHTML = '<div class="ca-history-back" id="ca-history-back">← Back</div>';
+
+      document.getElementById('ca-history-back').addEventListener('click', () => {
+        actions.style.display = 'flex';
+        hero.style.display = 'block';
+        list.style.display = 'none';
+        list.innerHTML = '';
+      });
+
+      const webConvos = convos.filter((c) => c.channel === 'web');
+
+      if (webConvos.length === 0) {
+        list.insertAdjacentHTML('beforeend', '<div class="ca-history-empty">No previous chats yet. Start a new one!</div>');
+        return;
+      }
+
+      webConvos.forEach((c) => {
+        const userMsgs = (c.messages || []).filter((m) => m.role === 'user');
+        const preview = userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : 'Chat started';
+        const date = new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        const msgCount = c._count?.messages || 0;
+
+        const item = document.createElement('div');
+        item.className = 'ca-history-item';
+        item.innerHTML = `
+          <div class="ca-hi-icon">💬</div>
+          <div class="ca-hi-text">
+            <div class="ca-hi-preview">${escapeHtml(preview)}</div>
+            <div class="ca-hi-meta">${date} · ${msgCount} messages</div>
+          </div>
+        `;
+        item.addEventListener('click', () => openOldChat(c.id));
+        list.appendChild(item);
+      });
+    } catch (error) {
+      list.insertAdjacentHTML('beforeend', '<div class="ca-history-empty">Could not load chats. Please try again.</div>');
+      console.error('[Calling Agent Widget] History error:', error);
+    }
+  }
+
+  async function openOldChat(convoId) {
+    try {
+      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/detail/${convoId}`);
+      const data = await res.json();
+      if (!data.success || !data.data) {
+        alert('Could not load this chat.');
+        return;
+      }
+      saveConversationId(convoId);
+      const messages = document.getElementById('ca-messages');
+      messages.innerHTML = '';
+      (data.data.messages || []).forEach((m) => {
+        addMessage(m.content, m.role === 'user');
+      });
+      pendingAttachment = null;
+      document.getElementById('ca-input').value = '';
+      showChat();
+      document.getElementById('ca-input').focus();
+    } catch (error) {
+      alert('Could not load this chat. Please try again.');
+      console.error('[Calling Agent Widget] Open old chat error:', error);
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function addMessage(text, isUser = false) {

@@ -32,6 +32,9 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationIdState] = useState<string | null>(null);
+  const [oldChats, setOldChats] = useState<any[]>([]);
+  const [showOldChats, setShowOldChats] = useState(false);
+  const [loadingOldChats, setLoadingOldChats] = useState(false);
 
   const STORAGE_KEY = 'ca-conversations-dashboard';
 
@@ -351,6 +354,51 @@ export default function ChatPage() {
 
   const clearChat = () => { setMessages([]); setConversationId(null); stopSpeaking(); };
 
+  const startNewChat = () => {
+    setShowOldChats(false);
+    setMessages([]);
+    setConversationId(null);
+    stopSpeaking();
+  };
+
+  const loadOldChats = async () => {
+    if (!selectedBusiness) return;
+    setShowOldChats(true);
+    setLoadingOldChats(true);
+    try {
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/${selectedBusiness}?limit=10`);
+      const data = await res.json();
+      setOldChats((data.data || []).filter((c: any) => c.channel === 'web'));
+    } catch (error) {
+      console.error('Failed to load old chats:', error);
+      setOldChats([]);
+    } finally {
+      setLoadingOldChats(false);
+    }
+  };
+
+  const openOldChat = async (convoId: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/detail/${convoId}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        const msgs: Message[] = (data.data.messages || []).map((m: any) => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.createdAt || new Date().toISOString(),
+        }));
+        setMessages(msgs);
+        setConversationId(convoId);
+        setShowOldChats(false);
+      }
+    } catch (error) {
+      console.error('Failed to open old chat:', error);
+      alert('Could not load this chat. Please try again.');
+    }
+    setLoading(false);
+  };
+
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = { restaurant: '🍽️ Restaurant', 'real-estate': '🏠 Real Estate', ecommerce: '🛒 E-commerce', consulting: '💼 Consulting', agriculture: '🌾 Agriculture', generic: '🏢 Business' };
     return labels[type] || type;
@@ -381,7 +429,13 @@ export default function ChatPage() {
               ))}
             </select>
             <button
-              onClick={clearChat}
+              onClick={loadOldChats}
+              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              📁 Previous Chats
+            </button>
+            <button
+              onClick={startNewChat}
               className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
             >
               New Chat
@@ -393,7 +447,51 @@ export default function ChatPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
-          {messages.length === 0 && (
+          {showOldChats && (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">📁 Previous Chats</h3>
+                <button
+                  onClick={() => setShowOldChats(false)}
+                  className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200"
+                >
+                  ← Back to chat
+                </button>
+              </div>
+              {loadingOldChats && (
+                <div className="flex items-center gap-3 py-4 text-gray-500 text-sm">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                  Loading chats...
+                </div>
+              )}
+              {!loadingOldChats && oldChats.length === 0 && (
+                <div className="text-center text-gray-400 py-8">No previous chats yet. Start a new one!</div>
+              )}
+              <div className="space-y-2">
+                {oldChats.map((c: any) => {
+                  const userMsgs = (c.messages || []).filter((m: any) => m.role === 'user');
+                  const preview = userMsgs.length > 0 ? userMsgs[userMsgs.length - 1].content : 'Chat started';
+                  const date = new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => openOldChat(c.id)}
+                      className="w-full text-left flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">💬</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-800 truncate">{preview}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{date} · {c._count?.messages || 0} messages</div>
+                      </div>
+                      <span className="text-gray-400">→</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {messages.length === 0 && !showOldChats && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-200 mb-6">
                 🤖
