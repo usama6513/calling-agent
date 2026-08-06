@@ -492,18 +492,32 @@ export default function ChatPage() {
           )}
 
           {messages.length === 0 && !showOldChats && (
-            <div className="flex flex-col items-center justify-center py-20">
+            <div className="flex flex-col items-center justify-center py-16">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-200 mb-6">
                 🤖
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">How can I help you?</h2>
-              <p className="text-gray-500 mb-8">Ask me anything about this business</p>
-              <button
-                onClick={startVoiceInput}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-lg hover:from-green-600 hover:to-emerald-700 shadow-xl shadow-green-200 transition-all flex items-center gap-3"
-              >
-                <span className="text-2xl">🎤</span> Start Voice Chat
-              </button>
+              <p className="text-gray-500 mb-8">Start a new chat or continue a previous one</p>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <button
+                  onClick={startNewChat}
+                  className="px-8 py-5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-lg hover:from-blue-600 hover:to-indigo-700 shadow-xl shadow-blue-200 transition-all flex items-center gap-3"
+                >
+                  <span className="text-2xl">🆕</span> New Chat
+                </button>
+                <button
+                  onClick={loadOldChats}
+                  className="px-8 py-5 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold text-lg hover:border-blue-300 hover:bg-blue-50 shadow-xl shadow-gray-200 transition-all flex items-center gap-3"
+                >
+                  <span className="text-2xl">📁</span> Previous Chats
+                </button>
+                <button
+                  onClick={startVoiceInput}
+                  className="px-8 py-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold text-lg hover:from-green-600 hover:to-emerald-700 shadow-xl shadow-green-200 transition-all flex items-center gap-3"
+                >
+                  <span className="text-2xl">🎤</span> Voice Chat
+                </button>
+              </div>
             </div>
           )}
 
