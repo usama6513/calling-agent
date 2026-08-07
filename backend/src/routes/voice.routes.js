@@ -39,18 +39,44 @@ function romanToUrduScript(text) {
           const results = body?.value || (Array.isArray(body) ? body : null);
           const first = Array.isArray(results) ? results[0] : null;
           const urdu = first?.[1]?.[0];
-          if (urdu && isUrduScriptText(urdu)) {
+          if (urdu && isUrduScriptText(urdu) && urdu.replace(/[\s،۔؟]/g, '').length >= 2) {
             resolve(urdu);
           } else {
-            resolve(text);
+            resolve(null);
           }
         } catch {
-          resolve(text);
+          resolve(null);
         }
       });
     };
-    https.get(url, { agent: googleAgent, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } }, tryParse).on('error', () => resolve(text));
+    https.get(url, { agent: googleAgent, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } }, tryParse).on('error', () => resolve(null));
   });
+}
+
+async function transliterateChunked(text) {
+  const parts = String(text).split(/(?<=[.,;:!?۔،؛؟])\s*/).filter((p) => p.trim().length > 0);
+  const out = [];
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const converted = await romanToUrduScript(trimmed);
+    if (converted) {
+      out.push(converted);
+    } else {
+      const words = trimmed.split(/\s+/);
+      const wordResult = [];
+      for (const w of words) {
+        if (/^[a-z0-9]+$/i.test(w) && w.length > 1) {
+          const wc = await romanToUrduScript(w);
+          wordResult.push(wc || w);
+        } else {
+          wordResult.push(w);
+        }
+      }
+      out.push(wordResult.join(' '));
+    }
+  }
+  return out.join(' ');
 }
 
 const DEVANAGARI_RE = /[\u0900-\u097F]/;
@@ -186,14 +212,14 @@ async function handleSynthesize(req, res) {
   // If this is Urdu (detected or forced) but written in Roman/Latin letters,
   // transliterate it to Urdu script so Google TTS actually speaks Urdu.
   if (language === 'ur' && !isUrduScriptText(ttsText)) {
-    const converted = await romanToUrduScript(ttsText);
+    const converted = await transliterateChunked(ttsText);
     if (converted && isUrduScriptText(converted)) {
       ttsText = converted;
     }
   } else if (language === 'en' && !lang) {
     // Roman Urdu that slips past detection → treat as Urdu
     if (hasRomanUrdu(ttsText) && !isUrduScriptText(ttsText)) {
-      const converted = await romanToUrduScript(ttsText);
+      const converted = await transliterateChunked(ttsText);
       if (converted && isUrduScriptText(converted)) {
         ttsText = converted;
         language = 'ur';
