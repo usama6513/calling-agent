@@ -115,7 +115,7 @@ function splitText(text, maxLen = 180) {
   if (clean.length <= maxLen) return [clean];
   const chunks = [];
   let current = '';
-  const sentences = clean.split(/(?<=[.!?।؟])\s+|(?<=[,;])\s+/);
+  const sentences = clean.split(/(?<=[.!?۔؟।])\s+|(?<=[,;،])\s+/);
   for (const part of sentences) {
     if ((current + ' ' + part).trim().length <= maxLen) {
       current = (current + ' ' + part).trim();

@@ -1053,6 +1053,13 @@ Follow these rules STRICTLY:
 6. Reply in the same language/style the user used (Roman Urdu / Urdu / English), matching their script.`;
     messages.push({ role: 'system', content: currentOverride });
 
+    const languageEnforcer = userLanguage === 'roman-urdu'
+      ? `OUTPUT LANGUAGE (MANDATORY, last and most important rule): The user's latest message is in ROMAN URDU (Urdu written with English letters). You MUST write your ENTIRE reply in ROMAN URDU using ENGLISH/LATIN LETTERS ONLY — exactly like this: "Aap ka bank account safe hai, chinta na karein. Ye message fake hai." NEVER use Urdu/Arabic script (نستعلیق / Arabic letters), NEVER use Devanagari/Hindi script, and NEVER reply in pure English. Roman Urdu means the WHOLE answer in Latin letters. Re-read your reply before sending: if any word is not in Latin letters, rewrite it.`
+      : userLanguage === 'urdu'
+      ? `OUTPUT LANGUAGE (MANDATORY, last and most important rule): The user's latest message is in URDU. Reply in URDU ONLY, in the same script the user used. Do NOT reply in English.`
+      : `OUTPUT LANGUAGE (MANDATORY, last and most important rule): The user's latest message is in ENGLISH. Reply in ENGLISH ONLY. Do NOT reply in Urdu or Roman Urdu.`;
+    messages.push({ role: 'system', content: languageEnforcer });
+
     const model = business.aiModel || GROQ_MODEL;
     const temperature = business.temperature ?? 0.7;
     let maxTokens = business.maxTokens ?? 600;
