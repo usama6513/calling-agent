@@ -102,6 +102,18 @@ model Attachment {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
+model SecurityScan {
+  id        String   @id @default(uuid())
+  status    String   // healthy, warning, critical
+  summary   String?  // human readable summary
+  checks    Json     // individual check results
+  issues    Json     // list of found issues
+  duration  Int?     // ms
+  createdAt DateTime @default(now())
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Appointment {
   id          String   @id @default(uuid())
   businessId  String
