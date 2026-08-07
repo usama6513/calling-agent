@@ -47,6 +47,9 @@ export async function authFetch(endpoint: string, options: RequestInit = {}): Pr
     if (newToken) {
       token = newToken;
       response = await doFetch(token);
+    } else {
+      redirectToLogin();
+      throw new Error('Session expired. Please log in again.');
     }
   }
 
@@ -68,6 +71,13 @@ export function isAuthenticated(): boolean {
 
 export function clearAuth(): void {
   if (typeof window !== 'undefined') localStorage.removeItem(TOKEN_KEY);
+}
+
+function redirectToLogin(): void {
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    clearAuth();
+    window.location.href = '/login';
+  }
 }
 
 export const api = {

@@ -490,6 +490,18 @@ function detectLanguage(text) {
   return 'english';
 }
 
+const GREETING_RE = /^(assalam|asalam|salam|salaam|hello|hallo|hiii+|hi+|hey|heyy+|aye|oye|yo|namaste|good\s*(morning|afternoon|evening|night)|subah|sham|mujhe\s*salam)/i;
+
+function isGreeting(text) {
+  if (!text) return false;
+  const t = String(text).trim();
+  if (t.length > 40) return false;
+  const normalized = t.toLowerCase();
+  if (GREETING_RE.test(normalized)) return true;
+  return /\b(assalamualaikum|assalam-o-alaikum|asalamualikum|waalaikum|wa-alaykum)\b/i.test(normalized) ||
+         /\b(kese ho|kaise ho|kesay ho|kaisey ho|kya hal|kya haal|kya khabar|kya haal hai|kya haal he)\b/i.test(normalized);
+}
+
 const SYSTEM_PROMPT_BASE = `You are an AI-powered business assistant for a real business. Your role is to help customers professionally and efficiently.
 
 CORE RULES:
@@ -973,6 +985,21 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     const userLanguage = detectLanguage(userMessage);
     const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage, gender);
 
+    // Topic-switch guard: when the latest message is a greeting or a brand-new topic,
+    // drop the old (often fraud-heavy) history so the model does NOT keep replaying it.
+    let effectiveHistory = history;
+    const FOLLOWUP_RE = /\b(aur|lekin|phir|aage|theek|ok|okay|haan|han|yes|no|kya matlab|detail mein|poori detail|step by step|process|kya karun|kya karein|phir kya|samajh nahi|mujhe samjhao|toh kya|to kya)\b/i;
+    if (isGreeting(userMessage)) {
+      effectiveHistory = history.slice(-1);
+    } else {
+      const isFinanceBusiness = business.type === 'finance';
+      const currentLooksFraud = isFinanceBusiness && FraudScanner.looksLikeSmsOrTranscript(userMessage);
+      const isShortFollowup = userMessage.trim().length <= 80 && FOLLOWUP_RE.test(userMessage);
+      if (isFinanceBusiness && !currentLooksFraud && !isShortFollowup) {
+        effectiveHistory = history.slice(-1);
+      }
+    }
+
     const messages = [
       { role: 'system', content: systemPrompt },
     ];
@@ -1009,7 +1036,22 @@ ${JSON.stringify(fraudReport, null, 2)}\n\nUse this report to give a clear verdi
       }
     }
 
-    messages.push(...history);
+    messages.push(...effectiveHistory);
+
+    // Current-message override: forces the model to answer ONLY the latest user message.
+    // Prevents it from repeating an old topic (e.g. fraud/scam analysis) when the user
+    // greets, asks a new question, or switches topics.
+    const currentOverride = `CURRENT MESSAGE (answer ONLY this, ignore older topic instructions unless relevant):
+User's latest message is: "${userMessage.slice(0, 200)}"
+
+Follow these rules STRICTLY:
+1. The latest message is what the user is asking RIGHT NOW. Answer exactly that and nothing else.
+2. If it is a GREETING (salam, hello, hi, kese ho, kaise ho, aap kaise hain, good morning, etc.) → reply with a friendly greeting back and ask how you can help. DO NOT answer about fraud, scams, FIA, banking, or any previous topic.
+3. If the user asks about a NEW topic (education, courses, careers, budgeting, or anything else) → answer ONLY that new topic. Do not continue the previous topic.
+4. If the latest message is NOT about a scam/SMS/URL/phone-call analysis, then IGNORE any FRAUD SCAN REPORT or URL SAFETY SCAN REPORT above and answer the user's actual question normally.
+5. Never repeat or copy-paste an earlier answer. Each reply must be fresh and tailored to the current question.
+6. Reply in the same language/style the user used (Roman Urdu / Urdu / English), matching their script.`;
+    messages.push({ role: 'system', content: currentOverride });
 
     const model = business.aiModel || GROQ_MODEL;
     const temperature = business.temperature ?? 0.7;
