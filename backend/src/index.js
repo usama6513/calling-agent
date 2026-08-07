@@ -32,10 +32,10 @@ app.use(helmet());
 
 // Path-aware CORS:
 //  - /api/auth/* → restricted to allowedOrigins (dashboard) with credentials for refresh-cookie flow
-//  - everything else → wide open so the customer-facing widget works on any website
+//  - everything else → reflect origin with credentials so the dashboard (which sends credentials: include)
+//    works, and the customer-facing widget still works on any website (its origin is echoed back too)
 app.use((req, res, next) => {
   const isAuthRoute = req.path.startsWith('/api/auth');
-  const origin = req.headers.origin;
 
   if (isAuthRoute) {
     return cors({
@@ -44,10 +44,15 @@ app.use((req, res, next) => {
         return cb(new Error('Not allowed by CORS'));
       },
       credentials: true,
+      maxAge: 0,
     })(req, res, next);
   }
 
-  return cors({ origin: '*' })(req, res, next);
+  return cors({
+    origin: (o, cb) => cb(null, o || true),
+    credentials: true,
+    maxAge: 0,
+  })(req, res, next);
 });
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));

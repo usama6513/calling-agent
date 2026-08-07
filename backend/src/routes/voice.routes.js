@@ -20,6 +20,39 @@ function detectTtsLang(text) {
   return 'en';
 }
 
+const URDU_SCRIPT_RE_FULL = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+function isUrduScriptText(text) {
+  return URDU_SCRIPT_RE_FULL.test(text);
+}
+
+function romanToUrduScript(text) {
+  return new Promise((resolve) => {
+    const url = `https://inputtools.google.com/request?itc=ur-t-i0-und&num=1&cp=0&cs=1&ie=utf-8&oe=utf-8&app=translate&text=${encodeURIComponent(text)}`;
+    const tryParse = (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        try {
+          const data = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+          const body = Array.isArray(data) ? data[1] : data;
+          const results = body?.value || (Array.isArray(body) ? body : null);
+          const first = Array.isArray(results) ? results[0] : null;
+          const urdu = first?.[1]?.[0];
+          if (urdu && isUrduScriptText(urdu)) {
+            resolve(urdu);
+          } else {
+            resolve(text);
+          }
+        } catch {
+          resolve(text);
+        }
+      });
+    };
+    https.get(url, { agent: googleAgent, headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } }, tryParse).on('error', () => resolve(text));
+  });
+}
+
 const DEVANAGARI_RE = /[\u0900-\u097F]/;
 const URDU_SCRIPT_RE = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
@@ -147,8 +180,28 @@ async function handleSynthesize(req, res) {
     return res.status(400).json({ success: false, error: 'Text is required' });
   }
 
-  const language = lang || detectTtsLang(text);
-  const chunks = splitText(text);
+  let language = lang || detectTtsLang(text);
+  let ttsText = String(text).trim();
+
+  // If this is Urdu (detected or forced) but written in Roman/Latin letters,
+  // transliterate it to Urdu script so Google TTS actually speaks Urdu.
+  if (language === 'ur' && !isUrduScriptText(ttsText)) {
+    const converted = await romanToUrduScript(ttsText);
+    if (converted && isUrduScriptText(converted)) {
+      ttsText = converted;
+    }
+  } else if (language === 'en' && !lang) {
+    // Roman Urdu that slips past detection → treat as Urdu
+    if (hasRomanUrdu(ttsText) && !isUrduScriptText(ttsText)) {
+      const converted = await romanToUrduScript(ttsText);
+      if (converted && isUrduScriptText(converted)) {
+        ttsText = converted;
+        language = 'ur';
+      }
+    }
+  }
+
+  const chunks = splitText(ttsText);
 
   const cacheKey = `${language}:${chunks.join('|')}`;
   const cached = ttsCache.get(cacheKey);

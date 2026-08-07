@@ -503,7 +503,14 @@ CORE RULES:
 8. Be conversational but professional
 9. If on a phone call, keep responses natural for voice conversation. Avoid bullet points.
 
-IMPORTANT: You are representing a real business. Be accurate and reliable.`;
+IMPORTANT: You are representing a real business. Be accurate and reliable.
+
+TOPIC FOLLOWING (CRITICAL):
+- The user's CURRENT message is ALWAYS the question you must answer. Answer exactly what they just asked about — nothing else.
+- When the user changes topic (e.g. was asking about fraud/scams, now asks about education/careers/courses or anything else), IMMEDIATELY switch to the new topic and answer ONLY about the new topic.
+- Never keep answering about an old topic when the user has moved on. If the latest message is about education, talk about education — not fraud, not banking, not budgeting.
+- Ignore previous-topic instructions unless the current message is actually about that topic.
+- The most recent user message takes priority over everything in the conversation history.`;
 
 class AIService {
   static async describeImage(buffer, mimeType, filename, promptOverride = null) {
