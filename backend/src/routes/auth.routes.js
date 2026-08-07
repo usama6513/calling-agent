@@ -3,7 +3,7 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const prisma = require('../config/db');
 const asyncHandler = require('../middleware/asyncHandler');
-const { protect } = require('../middleware/auth.middleware');
+const { protect, restrictTo } = require('../middleware/auth.middleware');
 const {
   hashPassword,
   verifyPassword,
@@ -180,6 +180,129 @@ router.post('/change-password', protect, asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true, message: 'Password updated successfully' });
+}));
+
+// ===== User Management (admin only) =====
+
+// GET /api/auth/users/exists — public check if any user exists (for signup bootstrap)
+router.get('/users/exists', asyncHandler(async (req, res) => {
+  const count = await prisma.user.count();
+  res.json({ success: true, data: { exists: count > 0 } });
+}));
+
+// GET /api/auth/users — list all users
+router.get('/users', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      isActive: true,
+      lastLoginAt: true,
+      createdAt: true,
+      _count: { select: { refreshTokens: true } },
+    },
+  });
+
+  const safeUsers = users.map((u) => ({ ...u, _count: undefined, activeSessions: u._count.refreshTokens }));
+  res.json({ success: true, data: safeUsers });
+}));
+
+// POST /api/auth/users — admin creates a new user
+router.post('/users', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const { email, password, name, role } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+  if (String(password).length < 8) {
+    return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ success: false, error: 'Invalid email address' });
+  }
+  const allowedRoles = ['admin', 'manager', 'agent'];
+  if (role && !allowedRoles.includes(role)) {
+    return res.status(400).json({ success: false, error: 'Invalid role. Allowed: admin, manager, agent' });
+  }
+
+  const normalizedEmail = String(email).toLowerCase().trim();
+  const dup = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (dup) {
+    return res.status(409).json({ success: false, error: 'A user with this email already exists' });
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      email: normalizedEmail,
+      passwordHash: hashPassword(password),
+      name: name || null,
+      role: role || 'manager',
+    },
+  });
+
+  res.status(201).json({ success: true, data: { user: publicUser(user) } });
+}));
+
+// PUT /api/auth/users/:id — admin updates user (role, name, active status)
+router.put('/users/:id', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const { name, role, isActive } = req.body;
+  const targetId = req.params.id;
+
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  // Prevent admin from disabling/demoting themselves
+  if (targetId === req.user.id && (isActive === false || (role && role !== 'admin'))) {
+    return res.status(400).json({ success: false, error: 'You cannot disable or demote your own account' });
+  }
+
+  const allowedRoles = ['admin', 'manager', 'agent'];
+  if (role && !allowedRoles.includes(role)) {
+    return res.status(400).json({ success: false, error: 'Invalid role. Allowed: admin, manager, agent' });
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: targetId },
+    data: {
+      ...(name !== undefined ? { name: name || null } : {}),
+      ...(role !== undefined ? { role } : {}),
+      ...(isActive !== undefined ? { isActive: !!isActive } : {}),
+    },
+  });
+
+  // If user is disabled, revoke all their sessions
+  if (isActive === false) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: targetId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  res.json({ success: true, data: { user: publicUser(updated) } });
+}));
+
+// DELETE /api/auth/users/:id — admin removes a user
+router.delete('/users/:id', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const targetId = req.params.id;
+
+  if (targetId === req.user.id) {
+    return res.status(400).json({ success: false, error: 'You cannot delete your own account' });
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!target) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  await prisma.refreshToken.deleteMany({ where: { userId: targetId } });
+  await prisma.user.delete({ where: { id: targetId } });
+
+  res.json({ success: true, message: 'User deleted successfully' });
 }));
 
 module.exports = router;

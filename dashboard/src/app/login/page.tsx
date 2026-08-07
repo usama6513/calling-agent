@@ -1,16 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
-export default function LoginPage() {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://backend-seven-chi-71.vercel.app';
+
+function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('registered') === '1') {
+      setError('Account created! Please sign in.');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const checkUsers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/users/exists`);
+        const data = await res.json();
+        if (data.success && !data.data.exists) setShowSignup(true);
+      } catch {}
+    };
+    checkUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +108,23 @@ export default function LoginPage() {
         <p className="text-center text-xs text-slate-500 mt-6">
           AI Business Calling Agent · Secure Access
         </p>
+        {showSignup && (
+          <p className="text-center text-sm text-slate-400 mt-3">
+            New here?{' '}
+            <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-medium">
+              Create an account
+            </Link>
+          </p>
+        )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900"><p className="text-slate-400">Loading...</p></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

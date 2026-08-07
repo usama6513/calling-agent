@@ -9,8 +9,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   const isLoginPage = pathname === '/login';
+  const isAuthPage = isLoginPage || pathname === '/signup';
 
-  if (isLoginPage) {
+  if (isAuthPage) {
     return <>{children}</>;
   }
 
