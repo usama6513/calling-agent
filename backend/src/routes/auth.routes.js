@@ -78,23 +78,12 @@ router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   res.json({ success: true, data: { accessToken, expiresAt, user: publicUser(user) } });
 }));
 
-// POST /api/auth/register — only first user (bootstrap) or admin can register
+// POST /api/auth/register — open signup for manager/agent roles. Admin is never
+// created via signup; the very first account in the system is bootstrapped as admin.
 router.post('/register', asyncHandler(async (req, res) => {
   const { email, password, name, role } = req.body;
 
   const existing = await prisma.user.findMany({ take: 1 });
-  if (existing.length > 0) {
-    // Require admin token for additional users
-    const token = (req.headers.authorization || '').replace('Bearer ', '');
-    let payload = null;
-    try {
-      payload = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
-    } catch (e) { /* ignore */ }
-    const adminUser = payload ? await getUserById(payload.sub) : null;
-    if (!adminUser || adminUser.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Only an admin can create users' });
-    }
-  }
 
   if (!email || !password) {
     return res.status(400).json({ success: false, error: 'Email and password are required' });
@@ -104,6 +93,14 @@ router.post('/register', asyncHandler(async (req, res) => {
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ success: false, error: 'Invalid email address' });
+  }
+
+  // Self-signup can never create an admin. First user is bootstrapped as admin.
+  let resolvedRole;
+  if (existing.length === 0) {
+    resolvedRole = 'admin';
+  } else {
+    resolvedRole = role === 'agent' ? 'agent' : 'manager';
   }
 
   const normalizedEmail = String(email).toLowerCase().trim();
@@ -117,7 +114,7 @@ router.post('/register', asyncHandler(async (req, res) => {
       email: normalizedEmail,
       passwordHash: hashPassword(password),
       name: name || null,
-      role: role === 'admin' ? 'admin' : 'manager',
+      role: resolvedRole,
     },
   });
 

@@ -11,6 +11,7 @@ interface Business {
   aiModel?: string | null;
   temperature?: number | null;
   maxTokens?: number | null;
+  ownerId?: string | null;
 }
 
 interface GroqModel {
@@ -97,6 +98,12 @@ export default function SettingsPage() {
       setLoading(false);
     }
   };
+
+  const canManageBusiness = (b?: Business | null) =>
+    !!b && (currentUser?.role === 'admin' || (b.ownerId && b.ownerId === currentUser?.id));
+
+  const selectedBusiness = businesses.find((b) => b.id === selectedBusinessId) || null;
+  const canEditSelected = canManageBusiness(selectedBusiness);
 
   const handleSave = async () => {
     if (!selectedBusinessId) {
@@ -256,27 +263,32 @@ export default function SettingsPage() {
       <div className="max-w-2xl space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Business Selection</h2>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Business</label>
-            <select
-              value={selectedBusinessId}
-              onChange={(e) => setSelectedBusinessId(e.target.value)}
-              disabled={loading || businesses.length === 0}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              {loading && <option>Loading businesses...</option>}
-              {!loading && businesses.length === 0 && <option>No businesses found</option>}
-              {!loading &&
-                businesses.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              AI settings below apply to the selected business only.
-            </p>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select Business</label>
+              <select
+                value={selectedBusinessId}
+                onChange={(e) => setSelectedBusinessId(e.target.value)}
+                disabled={loading || businesses.length === 0}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                {loading && <option>Loading businesses...</option>}
+                {!loading && businesses.length === 0 && <option>No businesses found</option>}
+                {!loading &&
+                  businesses.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                AI settings below apply to the selected business only.
+              </p>
+              {selectedBusiness && !canEditSelected && (
+                <p className="text-xs text-amber-600 mt-1">
+                  🔒 This is a pre-built / shared agent. You cannot change its AI settings (admin or the owner can).
+                </p>
+              )}
+            </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
@@ -352,10 +364,10 @@ export default function SettingsPage() {
 
         <button
           onClick={handleSave}
-          disabled={saving || !selectedBusinessId}
+          disabled={saving || !selectedBusinessId || !canEditSelected}
           className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save AI Settings'}
+          {!canEditSelected ? 'Read-Only Agent' : saving ? 'Saving...' : 'Save AI Settings'}
         </button>
       </div>
       )}

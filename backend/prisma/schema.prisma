@@ -18,6 +18,7 @@ model User {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  businesses   Business[]     @relation("UserBusinesses")
 }
 
 model RefreshToken {
@@ -46,6 +47,8 @@ model Business {
   aiModel       String?        // Overrides global GROQ_MODEL
   temperature   Float?         // Overrides default 0.7
   maxTokens     Int?           // Overrides default 600
+  ownerId       String?        // null = pre-built (admin/system), otherwise = creating user
+  owner         User?          @relation("UserBusinesses", fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   conversations Conversation[]

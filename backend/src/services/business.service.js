@@ -17,6 +17,7 @@ class BusinessService {
         aiModel: data.aiModel || null,
         temperature: data.temperature ?? null,
         maxTokens: data.maxTokens ?? null,
+        ownerId: data.ownerId || null,
       },
     });
   }

@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'manager' | 'agent'>('manager');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFirstUser, setIsFirstUser] = useState(true);
@@ -52,7 +53,7 @@ export default function SignupPage() {
       const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -92,8 +93,8 @@ export default function SignupPage() {
 
           {!checking && !isFirstUser && (
             <div className="mb-4 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-300">
-              This system already has users. Signups are restricted — an admin must create your account from the
-              dashboard Settings page.
+              This system already has users. You can still create a Manager or AI Agent account below. Admin
+              accounts are never created through signup.
             </div>
           )}
 
@@ -145,9 +146,52 @@ export default function SignupPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Account Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole('manager')}
+                  className={`p-3 rounded-xl border text-left transition-colors ${
+                    role === 'manager'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-300'
+                      : 'border-white/10 bg-slate-900/60 text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  <div className="text-lg mb-1">👔</div>
+                  <div className="text-sm font-semibold">Manager</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('agent')}
+                  className={`p-3 rounded-xl border text-left transition-colors ${
+                    role === 'agent'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-300'
+                      : 'border-white/10 bg-slate-900/60 text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  <div className="text-lg mb-1">🤖</div>
+                  <div className="text-sm font-semibold">AI Agent</div>
+                </button>
+              </div>
+              <div className="mt-2 p-3 bg-slate-900/60 border border-white/10 rounded-xl text-xs text-slate-400 space-y-2">
+                {role === 'manager' ? (
+                  <>
+                    <p><span className="text-slate-200 font-medium">Manager</span> — customers ke saath chat karta hai, apne banaye hue AI agents ko manage kar sakta hai, analytics dekh sakta hai. Pre-built agents ko change/delete nahi kar sakta.</p>
+                    <p className="text-slate-500">Example: woh apni business ka naya agent bana kar usay customers ke liye deploy kar sakta hai.</p>
+                  </>
+                ) : (
+                  <>
+                    <p><span className="text-slate-200 font-medium">AI Agent</span> — sirf chat karta hai aur conversations dekhta hai. Koi agent create/change/delete nahi kar sakta.</p>
+                    <p className="text-slate-500">Example: woh pre-built agents ke saath customer chats handle kar sakta hai.</p>
+                  </>
+                )}
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={loading || (checking ? false : !isFirstUser)}
+              disabled={loading}
               className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 transition-all"
             >
               {loading ? 'Creating account...' : 'Create Account'}

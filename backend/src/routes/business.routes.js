@@ -3,8 +3,15 @@ const router = express.Router();
 const BusinessService = require('../services/business.service');
 const ConversationService = require('../services/conversation.service');
 const asyncHandler = require('../middleware/asyncHandler');
+const { protect, restrictTo } = require('../middleware/auth.middleware');
 
-router.post('/', asyncHandler(async (req, res) => {
+// A manager can only manage businesses they created. Pre-built businesses
+// (ownerId = null) and other users' businesses are admin-only to manage.
+function canManage(user, business) {
+  return user.role === 'admin' || (business.ownerId && business.ownerId === user.id);
+}
+
+router.post('/', protect, restrictTo('admin', 'manager'), asyncHandler(async (req, res) => {
   const { name, type, phone, email, address, website, description, knowledgeBase, rules, workingHours } = req.body;
 
   if (!name) {
@@ -17,6 +24,7 @@ router.post('/', asyncHandler(async (req, res) => {
   const business = await BusinessService.create({
     name, type, phone, email, address, website, description,
     knowledgeBase, rules, workingHours,
+    ownerId: req.user.id,
   });
 
   res.status(201).json({
@@ -54,16 +62,32 @@ router.get('/:id', asyncHandler(async (req, res) => {
   });
 }));
 
-router.put('/:id', asyncHandler(async (req, res) => {
-  const business = await BusinessService.update(req.params.id, req.body);
+router.put('/:id', protect, asyncHandler(async (req, res) => {
+  const business = await BusinessService.getById(req.params.id);
+
+  if (!business) {
+    return res.status(404).json({
+      success: false,
+      error: 'Business not found',
+    });
+  }
+
+  if (!canManage(req.user, business)) {
+    return res.status(403).json({
+      success: false,
+      error: 'You can only modify agents you created. Pre-built agents are admin-managed.',
+    });
+  }
+
+  const updated = await BusinessService.update(req.params.id, req.body);
 
   res.json({
     success: true,
-    data: business,
+    data: updated,
   });
 }));
 
-router.put('/:id/knowledge', asyncHandler(async (req, res) => {
+router.put('/:id/knowledge', protect, asyncHandler(async (req, res) => {
   const { knowledgeBase } = req.body;
 
   if (!knowledgeBase) {
@@ -73,15 +97,23 @@ router.put('/:id/knowledge', asyncHandler(async (req, res) => {
     });
   }
 
-  const business = await BusinessService.updateKnowledgeBase(req.params.id, knowledgeBase);
+  const business = await BusinessService.getById(req.params.id);
+  if (!business) {
+    return res.status(404).json({ success: false, error: 'Business not found' });
+  }
+  if (!canManage(req.user, business)) {
+    return res.status(403).json({ success: false, error: 'You can only modify agents you created.' });
+  }
+
+  const updated = await BusinessService.updateKnowledgeBase(req.params.id, knowledgeBase);
 
   res.json({
     success: true,
-    data: business,
+    data: updated,
   });
 }));
 
-router.put('/:id/rules', asyncHandler(async (req, res) => {
+router.put('/:id/rules', protect, asyncHandler(async (req, res) => {
   const { rules } = req.body;
 
   if (!rules) {
@@ -91,15 +123,39 @@ router.put('/:id/rules', asyncHandler(async (req, res) => {
     });
   }
 
-  const business = await BusinessService.updateRules(req.params.id, rules);
+  const business = await BusinessService.getById(req.params.id);
+  if (!business) {
+    return res.status(404).json({ success: false, error: 'Business not found' });
+  }
+  if (!canManage(req.user, business)) {
+    return res.status(403).json({ success: false, error: 'You can only modify agents you created.' });
+  }
+
+  const updated = await BusinessService.updateRules(req.params.id, rules);
 
   res.json({
     success: true,
-    data: business,
+    data: updated,
   });
 }));
 
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', protect, asyncHandler(async (req, res) => {
+  const business = await BusinessService.getById(req.params.id);
+
+  if (!business) {
+    return res.status(404).json({
+      success: false,
+      error: 'Business not found',
+    });
+  }
+
+  if (!canManage(req.user, business)) {
+    return res.status(403).json({
+      success: false,
+      error: 'You can only delete agents you created. Pre-built agents are admin-managed.',
+    });
+  }
+
   await BusinessService.delete(req.params.id);
 
   res.json({

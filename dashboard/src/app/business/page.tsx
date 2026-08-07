@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { authFetch } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 interface Business {
   id: string;
@@ -10,6 +11,7 @@ interface Business {
   phone: string | null;
   email: string | null;
   createdAt: string;
+  ownerId?: string | null;
   _count?: {
     conversations: number;
   };
@@ -26,6 +28,8 @@ const businessTypes = [
 ];
 
 export default function BusinessPage() {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -43,6 +47,8 @@ export default function BusinessPage() {
     knowledgeBase: '',
     rules: '',
   });
+
+  const canManage = (b: Business) => isAdmin || (b.ownerId && b.ownerId === currentUser?.id);
 
   useEffect(() => {
     fetchBusinesses();
@@ -148,12 +154,14 @@ export default function BusinessPage() {
           <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Businesses</h1>
           <p className="text-gray-600 mt-1 text-sm">Manage your business profiles</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto"
-        >
-          + Add Business
-        </button>
+        {(isAdmin || currentUser?.role === 'manager') && (
+          <button
+            onClick={openCreate}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto"
+          >
+            + Add Business
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -186,22 +194,27 @@ export default function BusinessPage() {
                   <p>✉️ {business.email}</p>
                 )}
                 <p>💬 {business._count?.conversations || 0} conversations</p>
+                {!canManage(business) && (
+                  <p className="text-xs text-gray-400">🔒 Read-only (pre-built or owned by someone else)</p>
+                )}
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => openEdit(business)}
-                  className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => { setDeleteTarget(business); setDeleteConfirmText(''); }}
-                  className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm"
-                >
-                  Delete
-                </button>
-              </div>
+              {canManage(business) && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEdit(business)}
+                    className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => { setDeleteTarget(business); setDeleteConfirmText(''); }}
+                    className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
