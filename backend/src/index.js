@@ -31,6 +31,25 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .map((o) => o.trim())
   .filter(Boolean);
 
+// Auth routes (login/register/refresh) carry credentials + httpOnly cookies, so the
+// origin allowlist is stricter than the rest of the API. We accept:
+//  - origins explicitly listed in CORS_ORIGINS
+//  - any Vercel-hosted frontend (dashboard deployment + alias URLs, e.g. *.vercel.app)
+//  - localhost (local development)
+// Arbitrary third-party origins stay blocked (CSRF protection for the refresh cookie).
+function isAllowedAuthOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const hostname = new URL(origin).hostname;
+    if (hostname === 'localhost') return true;
+    if (hostname.endsWith('.vercel.app')) return true;
+  } catch {
+    // malformed origin — reject
+  }
+  return false;
+}
+
 app.use(helmet());
 
 // Path-aware CORS:
@@ -43,7 +62,7 @@ app.use((req, res, next) => {
   if (isAuthRoute) {
     return cors({
       origin: (o, cb) => {
-        if (!o || allowedOrigins.length === 0 || allowedOrigins.includes(o)) return cb(null, true);
+        if (isAllowedAuthOrigin(o)) return cb(null, true);
         return cb(new Error('Not allowed by CORS'));
       },
       credentials: true,
