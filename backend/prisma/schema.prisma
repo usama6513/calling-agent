@@ -49,6 +49,7 @@ model Business {
   maxTokens     Int?           // Overrides default 600
   ownerId       String?        // null = pre-built (admin/system), otherwise = creating user
   owner         User?          @relation("UserBusinesses", fields: [ownerId], references: [id], onDelete: SetNull)
+  widgetKey     String?        // per-business key for public widget history reads (data-widget-key)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   conversations Conversation[]
@@ -110,6 +111,20 @@ model SecurityScan {
   issues    Json     // list of found issues
   duration  Int?     // ms
   createdAt DateTime @default(now())
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SecurityExercise {
+  id          String   @id @default(uuid())
+  status      String   // secure, vulnerable, inconclusive
+  summary     String?  // human readable summary
+  score       Int      // defense score 0-100
+  attacks     Json     // red team attacks + outcomes
+  defenses    Json     // blue team defensive verifications
+  triggeredBy String   @default("cron") // cron, manual
+  duration    Int?     // ms
+  createdAt   DateTime @default(now())
   @@index([status])
   @@index([createdAt])
 }

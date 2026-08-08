@@ -1,6 +1,11 @@
 const prisma = require('../config/db');
+const crypto = require('crypto');
 
 class BusinessService {
+  static generateWidgetKey() {
+    return 'wk-' + crypto.randomBytes(12).toString('hex');
+  }
+
   static async create(data) {
     return prisma.business.create({
       data: {
@@ -18,6 +23,7 @@ class BusinessService {
         temperature: data.temperature ?? null,
         maxTokens: data.maxTokens ?? null,
         ownerId: data.ownerId || null,
+        widgetKey: data.widgetKey || BusinessService.generateWidgetKey(),
       },
     });
   }

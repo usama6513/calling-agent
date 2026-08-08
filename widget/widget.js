@@ -4,10 +4,14 @@
  * Usage: Add this script to your website:
  * <script src="widget.js" 
  *   data-business-id="YOUR_BUSINESS_ID"
+ *   data-widget-key="YOUR_WIDGET_KEY"
  *   data-theme="blue"
  *   data-position="bottom-right"
  *   data-language="auto"
  * </script>
+ *
+ * data-widget-key (from the dashboard: Business → widget key) authorizes the
+ * widget to load chat history. Without it, history access is denied.
  */
 
 (function() {
@@ -17,6 +21,7 @@
 
   const CONFIG = {
     businessId: configElement?.getAttribute('data-business-id') || 'c343c2c4-395b-4c80-bace-9abe0cc7f18b',
+    widgetKey: configElement?.getAttribute('data-widget-key') || '',
     theme: configElement?.getAttribute('data-theme') || 'blue',
     position: configElement?.getAttribute('data-position') || 'bottom-right',
     apiUrl: configElement?.getAttribute('data-api-url') || 'https://backend-seven-chi-71.vercel.app',
@@ -708,7 +713,8 @@
     });
 
     try {
-      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/${CONFIG.businessId}?limit=10`);
+      const headers = CONFIG.widgetKey ? { 'x-widget-key': CONFIG.widgetKey } : {};
+      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/${CONFIG.businessId}?limit=10`, { headers });
       const data = await res.json();
       const convos = data.data || [];
       list.innerHTML = '<div class="ca-history-back" id="ca-history-back">← Back</div>';
@@ -753,7 +759,8 @@
 
   async function openOldChat(convoId) {
     try {
-      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/detail/${convoId}`);
+      const headers = CONFIG.widgetKey ? { 'x-widget-key': CONFIG.widgetKey } : {};
+      const res = await fetch(`${CONFIG.apiUrl}/api/conversations/detail/${convoId}`, { headers });
       const data = await res.json();
       if (!data.success || !data.data) {
         alert('Could not load this chat.');

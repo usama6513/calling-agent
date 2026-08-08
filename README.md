@@ -79,10 +79,13 @@ Add this to your website's HTML:
 ```html
 <script src="widget.js" 
   data-business-id="YOUR_BUSINESS_ID"
+  data-widget-key="YOUR_WIDGET_KEY"
   data-theme="blue"
   data-position="bottom-right">
 </script>
 ```
+
+`data-widget-key` (visible in the dashboard under the business) authorizes the public widget to load your business's chat history. Without a valid key the history endpoints return 401.
 
 ## Environment Variables
 

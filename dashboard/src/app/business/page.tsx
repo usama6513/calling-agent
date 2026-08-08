@@ -12,6 +12,7 @@ interface Business {
   email: string | null;
   createdAt: string;
   ownerId?: string | null;
+  widgetKey?: string | null;
   _count?: {
     conversations: number;
   };
@@ -194,6 +195,20 @@ export default function BusinessPage() {
                   <p>✉️ {business.email}</p>
                 )}
                 <p>💬 {business._count?.conversations || 0} conversations</p>
+                {business.widgetKey && (
+                  <p className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>🔑 Widget key: <code className="bg-gray-100 px-1 rounded">{business.widgetKey}</code></span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(business.widgetKey!);
+                        alert('Widget key copied. Add it to your embed as data-widget-key.');
+                      }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Copy
+                    </button>
+                  </p>
+                )}
                 {!canManage(business) && (
                   <p className="text-xs text-gray-400">🔒 Read-only (pre-built or owned by someone else)</p>
                 )}

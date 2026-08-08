@@ -79,12 +79,15 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 
-// Public (customer/widget-facing): chat, voice, tts, webhook, uploads, attachment view, conversation history
+// Public (customer/widget-facing): chat, voice, tts, webhook, uploads, attachment view
 app.use('/api/chat', chatRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/tts', ttsRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api', attachmentRoutes);
+
+// Conversation history reads: dashboard via JWT, widget via per-business widget key
+// (see conversation.routes.js protectOrWidgetKey).
 app.use('/api/conversations', conversationRoutes);
 
 // Banking: admin/manager account management (dashboard). AI agent talks to

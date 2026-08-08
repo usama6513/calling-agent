@@ -366,8 +366,7 @@ export default function ChatPage() {
     setShowOldChats(true);
     setLoadingOldChats(true);
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/${selectedBusiness}?limit=10`);
-      const data = await res.json();
+      const data = await authFetch(`/api/conversations/${selectedBusiness}?limit=10`);
       setOldChats((data.data || []).filter((c: any) => c.channel === 'web'));
     } catch (error) {
       console.error('Failed to load old chats:', error);
@@ -380,8 +379,7 @@ export default function ChatPage() {
   const openOldChat = async (convoId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`https://backend-seven-chi-71.vercel.app/api/conversations/detail/${convoId}`);
-      const data = await res.json();
+      const data = await authFetch(`/api/conversations/detail/${convoId}`);
       if (data.success && data.data) {
         const msgs: Message[] = (data.data.messages || []).map((m: any) => ({
           role: m.role,

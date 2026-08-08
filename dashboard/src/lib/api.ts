@@ -133,6 +133,15 @@ export const api = {
       authFetch('/api/groq/models'),
   },
 
+  security: {
+    getScans: (limit = 24) =>
+      authFetch(`/api/security/scans?limit=${limit}`),
+    getExercises: (limit = 20) =>
+      authFetch(`/api/security/exercises?limit=${limit}`),
+    runExercise: (side: 'both' | 'red' | 'blue' = 'both') =>
+      authFetch('/api/security/exercise', { method: 'POST', body: JSON.stringify({ side }) }),
+  },
+
   banking: {
     listAccounts: () =>
       authFetch('/api/banking/accounts'),

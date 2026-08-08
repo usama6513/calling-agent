@@ -1,0 +1,29 @@
+name: Cyber Exercise (hourly)
+
+on:
+  schedule:
+    # Runs at 30 minutes past every hour
+    - cron: '30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  exercise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger red/blue exercise
+        env:
+          EXERCISE_URL: https://backend-seven-chi-71.vercel.app/api/security/exercise
+          EXERCISE_KEY: ${{ secrets.SCAN_API_KEY }}
+        run: |
+          code=$(curl -s -o /tmp/exercise-result.json -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-scan-key: $EXERCISE_KEY" \
+            -d '{"side":"both"}' \
+            "$EXERCISE_URL")
+          echo "HTTP status: $code"
+          if [ "$code" != "201" ]; then
+            echo "Exercise failed to run"
+            cat /tmp/exercise-result.json
+            exit 1
+          fi
+          echo "Exercise completed successfully"
