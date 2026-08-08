@@ -132,4 +132,21 @@ export const api = {
     getAll: () =>
       authFetch('/api/groq/models'),
   },
+
+  banking: {
+    listAccounts: () =>
+      authFetch('/api/banking/accounts'),
+    createAccount: (data: any) =>
+      authFetch('/api/banking/accounts', { method: 'POST', body: JSON.stringify(data) }),
+    getAccount: (accountNumber: string) =>
+      authFetch(`/api/banking/accounts/${accountNumber}`),
+    getTransactions: (accountNumber: string, limit = 10) =>
+      authFetch(`/api/banking/accounts/${accountNumber}/transactions?limit=${limit}`),
+    deposit: (accountNumber: string, amount: number, description?: string) =>
+      authFetch(`/api/banking/accounts/${accountNumber}/deposit`, { method: 'POST', body: JSON.stringify({ amount, description }) }),
+    withdraw: (accountNumber: string, amount: number, description?: string) =>
+      authFetch(`/api/banking/accounts/${accountNumber}/withdraw`, { method: 'POST', body: JSON.stringify({ amount, description }) }),
+    transfer: (from: string, to: string, amount: number, note?: string) =>
+      authFetch('/api/banking/transfer', { method: 'POST', body: JSON.stringify({ from, to, amount, note }) }),
+  },
 };

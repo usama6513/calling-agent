@@ -114,6 +114,36 @@ model SecurityScan {
   @@index([createdAt])
 }
 
+model BankAccount {
+  id            String          @id @default(uuid())
+  accountNumber String          @unique
+  customerName  String
+  customerPhone String?
+  customerEmail String?
+  accountType   String          @default("savings") // savings, current, business
+  balance       Float           @default(0)
+  currency      String          @default("PKR")
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  transactions  BankTransaction[]
+}
+
+model BankTransaction {
+  id             String       @id @default(uuid())
+  accountId      String
+  type           String       // deposit, withdraw, transfer_in, transfer_out, fee
+  amount         Float
+  balanceAfter   Float
+  description    String?
+  reference      String?      // reference/IBAN for transfers
+  status         String       @default("completed") // pending, completed, failed
+  createdAt      DateTime     @default(now())
+  account        BankAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  @@index([accountId])
+  @@index([createdAt])
+}
+
 model Appointment {
   id          String   @id @default(uuid())
   businessId  String

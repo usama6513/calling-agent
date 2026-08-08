@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth.middleware');
+const { restrictTo } = require('./middleware/auth.middleware');
 
 const authRoutes = require('./routes/auth.routes');
 const chatRoutes = require('./routes/chat.routes');
@@ -20,6 +21,7 @@ const modelsRoutes = require('./routes/models.routes');
 const attachmentRoutes = require('./routes/attachment.routes');
 const voiceRoutes = require('./routes/voice.routes');
 const securityRoutes = require('./routes/security.routes');
+const bankingRoutes = require('./routes/banking.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -84,6 +86,10 @@ app.use('/api/tts', ttsRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api', attachmentRoutes);
 app.use('/api/conversations', conversationRoutes);
+
+// Banking: admin/manager account management (dashboard). AI agent talks to
+// BankingService directly in-process (via ai.service.js), not through HTTP.
+app.use('/api/banking', protect, restrictTo('admin', 'manager'), bankingRoutes);
 
 // Admin-protected routes
 app.use('/api/business', protect, businessRoutes);

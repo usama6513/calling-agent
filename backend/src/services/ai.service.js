@@ -5,6 +5,7 @@ const prisma = require('../config/db');
 const mammoth = require('mammoth');
 const URLScanner = require('./url-scanner.service');
 const FraudScanner = require('./fraud-scanner.service');
+const BankingService = require('./banking.service');
 
 const BUSINESS_TYPE_PROMPTS = {
   restaurant: `You are an AI receptionist for a restaurant. You can:
@@ -426,6 +427,26 @@ Always be practical, honest, and protective of the user. If something looks like
 - Handle customer inquiries and complaints
 - Escalate to human agents when needed
 Always be professional, helpful, and adaptable.`,
+
+  banking: `You are the AI customer service agent of a DIGITAL BANK. You perform REAL banking operations through the system's banking engine (balance check, deposits, withdrawals, transfers, transaction history). You are NOT allowed to make up numbers — always use the real account data the system provides you.
+
+## HOW BANKING WORKS HERE
+When a customer asks for anything banking-related, the system AUTOMATICALLY performs the real operation and gives you the RESULT. Your job is to relay that result to the customer in a clear, friendly way.
+
+### What you can help with:
+1. ACCOUNT BALANCE — "balance check karo", "kitna balance hai", "paisa kitna hai"
+2. DEPOSIT — "deposit karo", "5000 jama karo"
+3. WITHDRAW — "withdraw karo", "5000 nikalo"
+4. TRANSFER — "transfer karo", "kisi ko bhejo", "account se doosre account mein paise bhejo"
+5. TRANSACTION HISTORY — "last transactions", "statement", "recent activity"
+
+### RULES:
+- ALWAYS tell the customer the exact balance/amount after any operation (e.g. "Aapka balance ab Rs 25,000 hai").
+- If the system returns an ERROR (insufficient balance, account not found), relay it honestly and helpfully — never invent a successful result.
+- NEVER ask for passwords/OTP/PIN/MPIN. For transfers ask only: recipient account number and amount.
+- For a transfer, always CONFIRM the amount and recipient before executing, then report the new balance and the reference number.
+- Keep replies short, clear, and in the customer's language.
+- If the user asks something that is NOT banking (e.g. loans, investment advice, fraud education), answer it normally like a good bank advisor, but warn about scams and direct to official channels.`,
 };
 
 const GROQ_SYSTEM_PROMPT = `LANGUAGE: Auto-detect the user's language and always reply in the SAME language the user writes in. If the user writes in Urdu, reply in Urdu. If English, reply in English. If they mix (Roman Urdu/English), match their style. Never switch to English unless the user writes in English. Keep the detected language consistent throughout the conversation.`;
@@ -500,6 +521,131 @@ function isGreeting(text) {
   if (GREETING_RE.test(normalized)) return true;
   return /\b(assalamualaikum|assalam-o-alaikum|asalamualikum|waalaikum|wa-alaykum)\b/i.test(normalized) ||
          /\b(kese ho|kaise ho|kesay ho|kaisey ho|kya hal|kya haal|kya khabar|kya haal hai|kya haal he)\b/i.test(normalized);
+}
+
+// --- Digital Banking intent detection ---
+// Figures out what banking operation the user wants + extracts account number and amount.
+function detectBankingIntent(text) {
+  if (!text) return null;
+  const t = String(text).trim().toLowerCase();
+  if (t.length === 0) return null;
+
+  const ACC_RE = /\b(ca[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}|\d{12})\b/i;
+  const AMOUNT_RE = /(\d[\d,.]*)\s*(rs|pkr|rupees|rupay|rupee|\$|usd|dollar)?/i;
+
+  const accountMatch = t.match(ACC_RE);
+  const account = accountMatch ? accountMatch[1].replace(/[\s-]/g, '').toUpperCase() : null;
+
+  const isBalance = /\b(balance|kitna balance|balance check|balance dekh|paisa kitna|kitna paisa|account mein kitna|balance kya|account balance|how much.*have|bank balance)\b/i.test(t);
+  const isDeposit = /\b(deposit|jama karo|jama karun|jama karna|jama|add money|pay in|deposit karo|pesa dalo|paisa dalo|dal do|bharo)\b/i.test(t) && !/\b(withdraw|nikalo|nikalna|transfer)\b/i.test(t);
+  const isWithdraw = /\b(withdraw|nikalo|nikalna|nikal karun|nikalw|nkal|cash out|bahar karo|kam karo)\b/i.test(t);
+  const isTransfer = /\b(transfer|bhejo|bhej do|bhejna|bhej|pay\b|send|money send|paisa bhej|pesa bhej|koi aur|doosre account|dusre account|bhej dena)\b/i.test(t);
+  const isHistory = /\b(history|statement|transactions|transaction|last.*(transaction|activity)|recent|passbook|hisab|kitab)\b/i.test(t);
+
+  let intent = null;
+  if (isTransfer) intent = 'transfer';
+  else if (isDeposit) intent = 'deposit';
+  else if (isWithdraw) intent = 'withdraw';
+  else if (isHistory) intent = 'history';
+  else if (isBalance) intent = 'balance';
+
+  if (!intent) return null;
+
+  // Only deposit/withdraw/transfer need an amount. Strip account numbers out first
+  // so we never pick up digits that belong to the account number.
+  let amount = null;
+  if (intent === 'deposit' || intent === 'withdraw' || intent === 'transfer') {
+    const textWithoutAccounts = t.replace(ACC_RE, ' ');
+    const amtMatch = textWithoutAccounts.match(/(?:rs\.?|pkr|rupees|rupee|rupay|usd|\$)?\s*(\d[\d,]*(?:\.\d{1,2})?)(?![\d,.])/i);
+    if (amtMatch) {
+      const clean = amtMatch[1].replace(/,/g, '');
+      const num = parseFloat(clean);
+      if (!isNaN(num) && num > 0 && num < 1000000000) amount = num;
+    }
+  }
+
+  return { intent, account, amount, raw: text };
+}
+
+// Executes the banking operation via BankingService and returns a result object for the AI.
+async function executeBankingOperation(intent, account, amount, raw) {
+  const outcome = { success: false, error: null, data: null, needsAccount: !account, needsAmount: false, needsToAccount: false };
+
+  // Deposit / withdraw / balance / history all need an account. Transfer needs from + to.
+  if (intent === 'transfer') {
+    const ACC_RE = /\b(ca[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}|\d{12})\b/i;
+    const matches = String(raw).match(new RegExp(ACC_RE.source, 'gi')) || [];
+    const accounts = matches.map((m) => m.replace(/[\s-]/g, '').toUpperCase());
+    const toAccount = accounts.length >= 2 ? accounts[1] : null;
+    if (!accounts[0] || !toAccount) {
+      outcome.needsAccount = !accounts[0];
+      outcome.needsToAccount = !toAccount;
+      outcome.error = 'Transfer requires BOTH source and recipient account numbers.';
+      return outcome;
+    }
+    if (!amount) {
+      outcome.needsAmount = true;
+      outcome.error = 'Transfer requires an amount.';
+      return outcome;
+    }
+    try {
+      const result = await BankingService.transfer(accounts[0], toAccount, amount);
+      outcome.success = true;
+      outcome.data = { type: 'transfer', from: result.from, to: result.to, amount: result.amount, reference: result.reference };
+      return outcome;
+    } catch (e) {
+      outcome.error = e.message;
+      return outcome;
+    }
+  }
+
+  if (!account) {
+    outcome.error = intent === 'history' ? 'Account number required to fetch transactions.' : 'Account number required.';
+    return outcome;
+  }
+
+  if (intent === 'balance') {
+    try {
+      const result = await BankingService.getBalance(account);
+      outcome.success = true;
+      outcome.data = { type: 'balance', ...result };
+    } catch (e) {
+      outcome.error = e.message;
+    }
+    return outcome;
+  }
+
+  if (intent === 'history') {
+    try {
+      const result = await BankingService.getTransactions(account, 5);
+      outcome.success = true;
+      outcome.data = { type: 'history', accountNumber: result.accountNumber, customerName: result.customerName, transactions: result.transactions };
+    } catch (e) {
+      outcome.error = e.message;
+    }
+    return outcome;
+  }
+
+  if (intent === 'deposit' || intent === 'withdraw') {
+    if (!amount) {
+      outcome.needsAmount = true;
+      outcome.error = `Please specify the amount to ${intent === 'deposit' ? 'deposit' : 'withdraw'}.`;
+      return outcome;
+    }
+    try {
+      const result = intent === 'deposit'
+        ? await BankingService.deposit(account, amount)
+        : await BankingService.withdraw(account, amount);
+      outcome.success = true;
+      outcome.data = { type: intent, accountNumber: result.accountNumber, balance: result.balance, currency: result.currency, amount: result.amount };
+    } catch (e) {
+      outcome.error = e.message;
+    }
+    return outcome;
+  }
+
+  outcome.error = 'Unsupported banking operation.';
+  return outcome;
 }
 
 const SYSTEM_PROMPT_BASE = `You are an AI-powered business assistant for a real business. Your role is to help customers professionally and efficiently.
@@ -992,7 +1138,7 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
     if (isGreeting(userMessage)) {
       effectiveHistory = history.slice(-1);
     } else {
-      const isFinanceBusiness = business.type === 'finance';
+      const isFinanceBusiness = business.type === 'finance' || business.type === 'banking';
       const currentLooksFraud = isFinanceBusiness && FraudScanner.looksLikeSmsOrTranscript(userMessage);
       const isShortFollowup = userMessage.trim().length <= 80 && FOLLOWUP_RE.test(userMessage);
       if (isFinanceBusiness && !currentLooksFraud && !isShortFollowup) {
@@ -1006,6 +1152,43 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
 
     if (attachmentContext) {
       messages.push({ role: 'system', content: `The user has provided an attachment. You DO have access to its content via the description below - it is NOT a real file you need to open. Use it to answer the user's question accurately.\n${attachmentContext}` });
+    }
+
+    // Digital Banking: if this is a banking business and the user's message is a banking
+    // intent, run the REAL operation now and feed the result to the AI so it replies with
+    // live data (no invented numbers).
+    if (business.type === 'banking') {
+      const bankingIntent = detectBankingIntent(userMessage);
+      if (bankingIntent) {
+        try {
+          const bankingResult = await executeBankingOperation(bankingIntent.intent, bankingIntent.account, bankingIntent.amount, bankingIntent.raw);
+          let bankingContext;
+          if (bankingResult.success) {
+            const d = bankingResult.data;
+            if (d.type === 'balance') {
+              bankingContext = `\n\nBANKING RESULT (REAL, AUTHORITATIVE — the balance below is the CURRENT up-to-date balance. Relay it EXACTLY as shown. Do NOT add, subtract, or recalculate anything.):\nAccount ${d.accountNumber} (${d.customerName}) current balance: ${d.currency === 'PKR' ? 'Rs' : d.currency} ${Number(d.balance).toLocaleString()}.`;
+            } else if (d.type === 'deposit' || d.type === 'withdraw') {
+              bankingContext = `\n\nBANKING RESULT (REAL, AUTHORITATIVE — these numbers are final. Relay EXACTLY. Do NOT recalculate.):\n${d.type === 'deposit' ? 'Deposit' : 'Withdrawal'} of ${d.currency === 'PKR' ? 'Rs' : d.currency} ${Number(d.amount).toLocaleString()} ${d.type === 'deposit' ? 'made into' : 'taken from'} account ${d.accountNumber} succeeded. New balance: ${d.currency === 'PKR' ? 'Rs' : d.currency} ${Number(d.balance).toLocaleString()}.`;
+            } else if (d.type === 'transfer') {
+              bankingContext = `\n\nBANKING RESULT (REAL, AUTHORITATIVE — these numbers are final. Relay EXACTLY. Do NOT recalculate.):\nTransfer of ${d.from.currency === 'PKR' ? 'Rs' : d.from.currency} ${Number(d.amount).toLocaleString()} from account ${d.from.accountNumber} to account ${d.to.accountNumber} succeeded. Reference number: ${d.reference}. Source new balance: ${d.from.currency === 'PKR' ? 'Rs' : d.from.currency} ${Number(d.from.balance).toLocaleString()}.`;
+            } else if (d.type === 'history') {
+              const rows = d.transactions.map((t, i) => {
+                const sym = 'Rs';
+                const dir = t.type === 'deposit' || t.type === 'transfer_in' ? '+' : '-';
+                return `${i + 1}) ${new Date(t.createdAt).toLocaleString()} — ${t.type.replace(/_/g, ' ')} — ${sym} ${Math.abs(t.amount).toLocaleString()} — balance ${sym} ${t.balanceAfter.toLocaleString()}`;
+              }).join('\n');
+              bankingContext = `\n\nBANKING RESULT (REAL, AUTHORITATIVE — this is the list of transactions. Relay these entries in a readable list. Do NOT invent, skip, or alter any.):\nLatest transactions for account ${d.accountNumber} (${d.customerName}):\n${rows || 'No transactions yet.'}`;
+            } else {
+              bankingContext = `\n\nBANKING RESULT (REAL data): ${JSON.stringify(d)}`;
+            }
+          } else {
+            bankingContext = `\n\nBANKING RESULT (the operation was NOT completed — relay this honestly, never invent a success):\nERROR: ${bankingResult.error}${bankingResult.needsAccount ? ' The customer needs to provide their account number (format CA-XXXX-XXXX-XXXX). Politely ask for it.' : ''}${bankingResult.needsToAccount ? ' The customer also needs to provide the RECIPIENT account number for the transfer. Politely ask for it.' : ''}${bankingResult.needsAmount ? ` The customer has NOT specified an amount. Politely ask them how much they want to ${bankingIntent.intent === 'deposit' ? 'deposit' : bankingIntent.intent === 'withdraw' ? 'withdraw' : 'transfer'}. Do NOT proceed without it.` : ''}`;
+          }
+          messages.push({ role: 'system', content: bankingContext });
+        } catch (bankingError) {
+          console.error('[Banking] Operation error:', bankingError.message);
+        }
+      }
     }
 
     const urls = URLScanner.extractUrls(userMessage);

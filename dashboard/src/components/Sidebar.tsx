@@ -9,6 +9,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: '📊' },
   { href: '/chat', label: 'Live Chat', icon: '🎙️', highlight: true },
   { href: '/business', label: 'Businesses', icon: '🏢' },
+  { href: '/banking', label: 'Banking', icon: '🏦' },
   { href: '/conversations', label: 'Conversations', icon: '💬' },
   { href: '/analytics', label: 'Analytics', icon: '📈' },
   { href: '/security', label: 'Security', icon: '🛡️' },
