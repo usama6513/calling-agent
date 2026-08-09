@@ -87,6 +87,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ businessId, message, conversationId, channel }),
       }),
+    ensureConversation: (businessId: string, channel = 'web') =>
+      authFetch('/api/chat/ensure-conversation', {
+        method: 'POST',
+        body: JSON.stringify({ businessId, channel }),
+      }),
   },
 
   business: {
@@ -140,9 +145,17 @@ export const api = {
       authFetch(`/api/security/exercises?limit=${limit}`),
     runExercise: (side: 'both' | 'red' | 'blue' = 'both') =>
       authFetch('/api/security/exercise', { method: 'POST', body: JSON.stringify({ side }) }),
+    getThreats: (limit = 50) =>
+      authFetch(`/api/security/threats?limit=${limit}`),
+    getBlocked: (limit = 100) =>
+      authFetch(`/api/security/blocked?limit=${limit}`),
+    unblock: (id: string) =>
+      authFetch(`/api/security/blocked/${id}`, { method: 'DELETE' }),
   },
 
   banking: {
+    getBusiness: () =>
+      authFetch('/api/banking/business'),
     listAccounts: () =>
       authFetch('/api/banking/accounts'),
     createAccount: (data: any) =>

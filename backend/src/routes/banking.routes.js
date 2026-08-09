@@ -3,10 +3,25 @@ const router = express.Router();
 const asyncHandler = require('../middleware/asyncHandler');
 const { protect, restrictTo } = require('../middleware/auth.middleware');
 const BankingService = require('../services/banking.service');
+const prisma = require('../config/db');
 
 function cleanError(e) {
   return e.message || 'Banking operation failed';
 }
+
+// --- The banking portal's own business (used by the Inbox so chats go through
+// the banking agent team — separate from all other businesses' agents).
+router.get('/business', protect, restrictTo('admin', 'manager'), asyncHandler(async (req, res) => {
+  const business = await prisma.business.findFirst({
+    where: { type: 'banking' },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true },
+  });
+  if (!business) {
+    return res.status(404).json({ success: false, error: 'No banking business configured' });
+  }
+  res.json({ success: true, data: business });
+}));
 
 // --- Admin dashboard endpoints ---
 router.get('/accounts', protect, restrictTo('admin', 'manager'), asyncHandler(async (req, res) => {

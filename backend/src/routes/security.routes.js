@@ -5,6 +5,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { protect, restrictTo } = require('../middleware/auth.middleware');
 const SecurityService = require('../services/security.service');
 const CyberExerciseService = require('../services/cyber-exercise.service');
+const ThreatService = require('../services/threat.service');
 
 // Cron-triggered scan. Protected by SCAN_API_KEY (shared secret set in Vercel + GitHub Actions secret).
 // Without the key, only admins can trigger a scan.
@@ -65,6 +66,26 @@ router.get('/exercises', protect, restrictTo('admin'), asyncHandler(async (req, 
   const limit = Math.min(parseInt(req.query.limit) || 20, 50);
   const exercises = await CyberExerciseService.getRecentExercises(limit);
   res.json({ success: true, data: exercises });
+}));
+
+// Dashboard: live threat events (admin only)
+router.get('/threats', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+  const threats = await ThreatService.getThreats(limit);
+  res.json({ success: true, data: threats });
+}));
+
+// Dashboard: currently blocked IPs (admin only)
+router.get('/blocked', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 100, 200);
+  const blocked = await ThreatService.getBlocked(limit);
+  res.json({ success: true, data: blocked });
+}));
+
+// Dashboard: manually unblock an IP (admin only)
+router.delete('/blocked/:id', protect, restrictTo('admin'), asyncHandler(async (req, res) => {
+  await ThreatService.unblock(req.params.id);
+  res.json({ success: true, data: { id: req.params.id, unblocked: true } });
 }));
 
 module.exports = router;

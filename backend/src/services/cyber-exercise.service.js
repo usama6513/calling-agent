@@ -16,6 +16,10 @@ const FORGED_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJ
 async function http(method, path, { token, body } = {}) {
   const started = Date.now();
   const headers = { 'Content-Type': 'application/json' };
+  // Flag red-team probes so the IDS doesn't auto-block our own exercise traffic.
+  // Requires the same secret SCAN_API_KEY the middleware checks. Without it the
+  // probes are treated like real attacks (which is also a valid test).
+  if (process.env.SCAN_API_KEY) headers['x-cyber-exercise'] = process.env.SCAN_API_KEY;
   if (token) headers.Authorization = `Bearer ${token}`;
   try {
     const res = await fetch(`${BACKEND_URL}${path}`, {

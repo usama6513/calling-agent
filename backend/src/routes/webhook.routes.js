@@ -25,7 +25,7 @@ router.post('/voice/incoming', asyncHandler(async (req, res) => {
     });
   }
 
-  const twiml = PhoneService.getInitialVoiceResponse(BusinessId);
+  const twiml = await PhoneService.getInitialVoiceResponse(BusinessId);
 
   res.type('text/xml');
   res.send(twiml);

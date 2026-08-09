@@ -81,6 +81,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const threatMiddleware = require('./middleware/threat.middleware');
+app.use(threatMiddleware);
+
 app.get('/', (req, res) => {
   res.json({
     message: 'AI Business Calling Agent API',

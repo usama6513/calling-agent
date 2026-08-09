@@ -1,10 +1,13 @@
 const { getTwilioClient, getPhoneNumber } = require('../config/twilio');
 const AIService = require('./ai.service');
+const BankingAgents = require('./banking-agents.service');
 const prisma = require('../config/db');
 
 class PhoneService {
-  static getVoiceName() {
-    return 'Polly.Matthew';
+  static getVoiceName(gender) {
+    // Match the TTS voice to the officer answering the call (Sara/Fatima = female,
+    // Ahmed/Bilal/Ali = male).
+    return gender === 'female' ? 'Polly.Joanna' : 'Polly.Matthew';
   }
 
   static getGatherLanguage() {
@@ -58,11 +61,18 @@ class PhoneService {
 
     const result = await AIService.chat(businessId, conversationId, speechInput, 'phone');
 
-    const voiceName = this.getVoiceName();
+    // If a banking officer handled the call, introduce them so the caller knows
+    // exactly who they are talking to, and use a matching voice.
+    let spoken = result.message;
+    let voiceName = this.getVoiceName();
+    if (business.type === 'banking' && result.agent) {
+      spoken = `${BankingAgents.voiceIntro(result.agent)}${spoken}`;
+      voiceName = this.getVoiceName(result.agent.gender);
+    }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="${voiceName}">${this.escapeXml(result.message)}</Say>
+  <Say voice="${voiceName}">${this.escapeXml(spoken)}</Say>
   <Gather input="speech" action="${process.env.APP_URL || 'http://localhost:5000'}/api/webhook/voice/gather" method="POST" speechTimeout="auto" language="en-US">
   </Gather>
   <Say voice="${voiceName}">Thank you. Goodbye!</Say>
@@ -73,6 +83,7 @@ class PhoneService {
       twiml,
       conversationId: result.conversationId,
       message: result.message,
+      agent: result.agent || null,
     };
   }
 
@@ -85,13 +96,28 @@ class PhoneService {
       .replace(/'/g, '&apos;');
   }
 
-  static getInitialVoiceResponse(businessId) {
+  static async getInitialVoiceResponse(businessId) {
+    // If this is a banking business, the call opens by introducing the whole
+    // agent team so the caller knows they can talk to Sara, Bilal, Ahmed, etc.
+    let greeting = "Hello! Thank you for calling. I'm your AI assistant. How can I help you today?";
+    let voiceName = this.getVoiceName();
+    if (businessId) {
+      try {
+        const business = await prisma.business.findUnique({ where: { id: businessId } });
+        if (business && business.type === 'banking') {
+          greeting = BankingAgents.teamIntro(business.name);
+        }
+      } catch (e) {
+        console.error('[Phone] Intro lookup failed:', e.message);
+      }
+    }
+
     return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Matthew">Hello! Thank you for calling. I'm your AI assistant. How can I help you today?</Say>
+  <Say voice="${voiceName}">${this.escapeXml(greeting)}</Say>
   <Gather input="speech" action="${process.env.APP_URL || 'http://localhost:5000'}/api/webhook/voice/gather" method="POST" speechTimeout="auto" language="en-US">
   </Gather>
-  <Say voice="Polly.Matthew">I didn't hear anything. Let me know if you need help. Goodbye!</Say>
+  <Say voice="${voiceName}">I didn't hear anything. Let me know if you need help. Goodbye!</Say>
   <Hangup/>
 </Response>`;
   }

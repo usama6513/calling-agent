@@ -212,6 +212,102 @@ class BankingService {
     return { accountNumber: account.accountNumber, customerName: account.customerName, transactions: txns };
   }
 
+  // Summary of what happened to an account over the last `days`: totals per
+  // transaction type, a per-day breakdown, the distinct kinds of deposits and
+  // withdrawals (e.g. "Cash deposit", "Salary"), and the latest entries.
+  // Powers the statement officer agent's stats queries.
+  static async getTransactionStats(accountNumber, { days = 30, limit = 15 } = {}) {
+    const account = await this.getAccount(accountNumber);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const txns = await prisma.bankTransaction.findMany({
+      where: { accountId: account.id, createdAt: { gte: since } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const summary = {
+      deposits: 0,
+      withdrawals: 0,
+      transfersIn: 0,
+      transfersOut: 0,
+      totalDeposited: 0,
+      totalWithdrawn: 0,
+      totalTransferredIn: 0,
+      totalTransferredOut: 0,
+      count: txns.length,
+    };
+
+    const byDay = {};
+    const byType = {
+      deposit: { count: 0, total: 0, kinds: {} },
+      withdraw: { count: 0, total: 0, kinds: {} },
+      transfer_in: { count: 0, total: 0 },
+      transfer_out: { count: 0, total: 0 },
+    };
+
+    for (const t of txns) {
+      const key = t.createdAt.toISOString().slice(0, 10);
+      if (!byDay[key]) {
+        byDay[key] = { date: key, deposits: 0, withdrawals: 0, totalDeposited: 0, totalWithdrawn: 0, transfers: 0, totalTransferred: 0 };
+      }
+
+      if (t.type === 'deposit') {
+        summary.deposits += 1;
+        summary.totalDeposited += t.amount;
+        byDay[key].deposits += 1;
+        byDay[key].totalDeposited += t.amount;
+        byType.deposit.count += 1;
+        byType.deposit.total += t.amount;
+        const kind = (t.description || 'Deposit').trim() || 'Deposit';
+        byType.deposit.kinds[kind] = (byType.deposit.kinds[kind] || 0) + 1;
+      } else if (t.type === 'withdraw') {
+        summary.withdrawals += 1;
+        summary.totalWithdrawn += t.amount;
+        byDay[key].withdrawals += 1;
+        byDay[key].totalWithdrawn += t.amount;
+        byType.withdraw.count += 1;
+        byType.withdraw.total += t.amount;
+        const kind = (t.description || 'Withdrawal').trim() || 'Withdrawal';
+        byType.withdraw.kinds[kind] = (byType.withdraw.kinds[kind] || 0) + 1;
+      } else if (t.type === 'transfer_in') {
+        summary.transfersIn += 1;
+        summary.totalTransferredIn += t.amount;
+        byDay[key].transfers += 1;
+        byDay[key].totalTransferred += t.amount;
+        byType.transfer_in.count += 1;
+        byType.transfer_in.total += t.amount;
+      } else if (t.type === 'transfer_out') {
+        summary.transfersOut += 1;
+        summary.totalTransferredOut += t.amount;
+        byDay[key].transfers += 1;
+        byDay[key].totalTransferred += t.amount;
+        byType.transfer_out.count += 1;
+        byType.transfer_out.total += t.amount;
+      }
+    }
+
+    const summaryType = Object.keys(byType)
+      .filter((k) => byType[k].count > 0)
+      .map((k) => ({
+        type: k,
+        count: byType[k].count,
+        total: byType[k].total,
+        kinds: k === 'deposit' || k === 'withdraw'
+          ? Object.entries(byType[k].kinds).map(([label, count]) => ({ label, count }))
+          : [],
+      }));
+
+    return {
+      accountNumber: account.accountNumber,
+      customerName: account.customerName,
+      currency: account.currency,
+      days,
+      summary,
+      byType: summaryType,
+      byDay: Object.values(byDay).sort((a, b) => b.date.localeCompare(a.date)),
+      recent: txns.slice(0, Math.min(limit, 25)),
+    };
+  }
+
   static async listAccounts() {
     return prisma.bankAccount.findMany({ orderBy: { createdAt: 'desc' } });
   }
