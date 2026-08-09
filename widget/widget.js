@@ -877,11 +877,11 @@
     return data.data.text;
   }
 
-  async function synthesizeAudio(text) {
+  async function synthesizeAudio(text, gender) {
     const res = await fetch(`${CONFIG.apiUrl}/api/voice/synthesize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, gender }),
     });
     if (!res.ok) throw new Error('Synthesis failed');
     return URL.createObjectURL(await res.blob());
@@ -915,7 +915,7 @@
       if (data.success && data.data) {
         saveConversationId(data.data.conversationId);
         try {
-          const audioUrl = await synthesizeAudio(data.data.message);
+          const audioUrl = await synthesizeAudio(data.data.message, data.data.agent && data.data.agent.gender);
           addVoiceNote(audioUrl);
           document.getElementById('ca-audio').play();
         } catch {
@@ -982,11 +982,11 @@
     }
   }
 
-  async function speakTextReply(text) {
+  async function speakTextReply(text, gender) {
     try {
       const audio = document.getElementById('ca-audio');
       if (!audio) return;
-      audio.src = `${CONFIG.apiUrl}/api/voice/synthesize?text=${encodeURIComponent(text)}`;
+      audio.src = `${CONFIG.apiUrl}/api/voice/synthesize?text=${encodeURIComponent(text)}&gender=${encodeURIComponent(gender || 'male')}`;
       const tryPlay = (muted) => {
         if (muted) audio.muted = true;
         audio.play().then(function () {
@@ -1052,7 +1052,7 @@
       if (data.success && data.data) {
         saveConversationId(data.data.conversationId);
         addMessage(data.data.message);
-        speakTextReply(data.data.message);
+        speakTextReply(data.data.message, data.data.agent && data.data.agent.gender);
       } else {
         addMessage('Sorry, I encountered an error. Please try again.');
       }

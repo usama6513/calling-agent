@@ -192,7 +192,7 @@ export default function ChatPage() {
       if (data.success) {
         setConversationId(data.data.conversationId);
         setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString() }]);
-        speakReply(data.data.message);
+        speakReply(data.data.message, data.data.agent?.gender);
       } else {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date().toISOString() }]);
       }
@@ -246,11 +246,11 @@ export default function ChatPage() {
     return data.data.text;
   };
 
-  const synthesizeAudio = async (text: string) => {
+  const synthesizeAudio = async (text: string, gender?: string) => {
     const res = await fetch('https://backend-seven-chi-71.vercel.app/api/voice/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, gender }),
     });
     if (!res.ok) throw new Error('Synthesis failed');
     const blob = await res.blob();
@@ -283,7 +283,7 @@ export default function ChatPage() {
       if (data.success) {
         setConversationId(data.data.conversationId);
         try {
-          const audioUrl = await synthesizeAudio(data.data.message);
+          const audioUrl = await synthesizeAudio(data.data.message, data.data.agent?.gender);
           setMessages((prev) => [...prev, { role: 'assistant', content: data.data.message, timestamp: new Date().toISOString(), voiceNote: true, audioUrl }]);
           setTimeout(() => {
             if (audioRef.current) {
@@ -307,11 +307,11 @@ export default function ChatPage() {
 
   const stopSpeaking = () => { synthRef.current?.cancel(); setIsSpeaking(false); };
 
-  const playServerAudio = async (text: string) => {
+  const playServerAudio = async (text: string, gender?: string) => {
     try {
       const a = audioRef.current;
       if (!a) return;
-      a.src = `https://backend-seven-chi-71.vercel.app/api/voice/synthesize?text=${encodeURIComponent(text)}`;
+      a.src = `https://backend-seven-chi-71.vercel.app/api/voice/synthesize?text=${encodeURIComponent(text)}&gender=${encodeURIComponent(gender || 'male')}`;
       a.onplay = () => setIsSpeaking(true);
       a.onended = () => setIsSpeaking(false);
       a.onerror = () => setIsSpeaking(false);
@@ -333,8 +333,8 @@ export default function ChatPage() {
     }
   };
 
-  const speakReply = (text: string) => {
-    playServerAudio(text);
+  const speakReply = (text: string, gender?: string) => {
+    playServerAudio(text, gender);
   };
 
   const speakText = (text: string) => {

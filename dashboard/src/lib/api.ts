@@ -100,11 +100,11 @@ export const api = {
         method: 'POST',
         body: formData,
       }).then((r) => r.json()),
-    synthesize: (text: string) =>
+    synthesize: (text: string, gender?: string) =>
       fetch(`${API_BASE}/api/voice/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, gender }),
       }).then((r) => r.blob()),
   },
 

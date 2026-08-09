@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const https = require('https');
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+const { EdgeTTS } = require('node-edge-tts');
 const asyncHandler = require('../middleware/asyncHandler');
 const { groq } = require('../config/groq');
 
@@ -192,25 +196,65 @@ function googleTts(text, language) {
 const ttsCache = new Map();
 const TTS_CACHE_MAX = 200;
 
+function sanitizeForTts(text) {
+  return String(text)
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/[*_`#~>]/g, '')
+    .replace(/^\s*[-•·]\s+/gm, '')
+    .replace(/^\s*\d+[.)]\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function pickEdgeVoice(language, gender) {
+  if (language === 'ur') {
+    return gender === 'female' ? 'ur-PK-UzmaNeural' : 'ur-PK-AsadNeural';
+  }
+  return gender === 'female' ? 'en-US-JennyNeural' : 'en-US-GuyNeural';
+}
+
+function edgeTts(text, language, gender) {
+  return new Promise((resolve, reject) => {
+    const file = path.join(os.tmpdir(), `ca-tts-${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`);
+    const engine = new EdgeTTS({
+      voice: pickEdgeVoice(language, gender),
+      lang: language === 'ur' ? 'ur-PK' : 'en-US',
+      outputFormat: 'audio-24khz-96kbitrate-mono-mp3',
+      timeout: 25000,
+    });
+    engine
+      .ttsPromise(text, file)
+      .then(() => fs.readFileSync(file))
+      .then((buf) => {
+        try { fs.unlinkSync(file); } catch (e) {}
+        resolve(buf);
+      })
+      .catch((err) => {
+        try { fs.unlinkSync(file); } catch (e) {}
+        reject(err);
+      });
+  });
+}
+
 function getSynthesizeInput(req) {
   if (req.method === 'GET') {
-    return { text: req.query.text, lang: req.query.lang };
+    return { text: req.query.text, lang: req.query.lang, gender: req.query.gender };
   }
-  return { text: req.body.text, lang: req.body.lang };
+  return { text: req.body.text, lang: req.body.lang, gender: req.body.gender };
 }
 
 async function handleSynthesize(req, res) {
-  const { text, lang } = getSynthesizeInput(req);
+  const { text, lang, gender } = getSynthesizeInput(req);
 
   if (!text) {
     return res.status(400).json({ success: false, error: 'Text is required' });
   }
 
   let language = lang || detectTtsLang(text);
-  let ttsText = String(text).trim();
+  let ttsText = sanitizeForTts(text);
 
   // If this is Urdu (detected or forced) but written in Roman/Latin letters,
-  // transliterate it to Urdu script so Google TTS actually speaks Urdu.
+  // transliterate it to Urdu script so the voice engine actually speaks Urdu.
   if (language === 'ur' && !isUrduScriptText(ttsText)) {
     const converted = await transliterateChunked(ttsText);
     if (converted && isUrduScriptText(converted)) {
@@ -227,9 +271,7 @@ async function handleSynthesize(req, res) {
     }
   }
 
-  const chunks = splitText(ttsText);
-
-  const cacheKey = `${language}:${chunks.join('|')}`;
+  const cacheKey = `${language}:${gender || 'male'}:${ttsText}`;
   const cached = ttsCache.get(cacheKey);
   if (cached) {
     res.set({
@@ -240,6 +282,32 @@ async function handleSynthesize(req, res) {
     });
     return res.send(cached);
   }
+
+  // Preferred engine: Microsoft Edge TTS (natural gendered neural voices).
+  if (ttsText.length > 0) {
+    try {
+      const edgeBuf = await edgeTts(ttsText, language, gender);
+      if (edgeBuf && edgeBuf.length > 1000) {
+        ttsCache.set(cacheKey, edgeBuf);
+        if (ttsCache.size > TTS_CACHE_MAX) {
+          const firstKey = ttsCache.keys().next().value;
+          ttsCache.delete(firstKey);
+        }
+        res.set({
+          'Content-Type': 'audio/mpeg',
+          'Cache-Control': 'no-cache',
+          'Access-Control-Allow-Origin': '*',
+          'Content-Length': edgeBuf.length,
+        });
+        return res.send(edgeBuf);
+      }
+    } catch (error) {
+      console.error('[Edge TTS] Failed, falling back to Google:', error.message);
+    }
+  }
+
+  // Fallback engine: Google TTS (streamed chunk by chunk).
+  const chunks = splitText(ttsText);
 
   res.set({
     'Content-Type': 'audio/mpeg',

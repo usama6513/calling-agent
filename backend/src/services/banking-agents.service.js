@@ -166,7 +166,7 @@ const BANK_KNOWLEDGE = `
 function teamIntro(businessName) {
   const names = [AGENTS.account, AGENTS.transactions, AGENTS.money, AGENTS.loans, AGENTS.security, AGENTS.manager, AGENTS.support];
   const intro = names.map((a) => `${a.name}, ${a.title}`).join('; ');
-  return `Hello! You have reached ${businessName || 'our bank'}. You are speaking to our AI banking team. ${intro}. Just tell us what you need. For example, say balance check, deposit, withdraw, transfer, statement, my transaction stats, or loan. How can we help you today?`;
+  return `Hello, you have reached ${businessName || 'the bank'}. You can ask about your balance, statement, deposits, withdrawals, transfers, loans, or any security concern. Our team: ${intro}. Just tell me what you need, for example "balance check", "my statement", "deposit five thousand", or "I want to talk to Bilal". How can I help you today?`;
 }
 
 // --- Routing -----------------------------------------------------------------
@@ -225,6 +225,7 @@ function agentPrompt(agent) {
     .map((a) => `${a.name} — ${a.title} (${a.department})`)
     .join('; ');
   const dutyList = agent.duties.map((d, i) => `${i + 1}) ${d}`).join('\n');
+  const genderVerb = agent.gender === 'female' ? 'sakti' : 'sakta';
   const genderLine = agent.gender === 'female'
     ? '- You are a FEMALE officer. When speaking Urdu, ALWAYS use feminine verb forms about yourself: "main karti hoon", "main kar sakti hoon", "main bata sakti hoon", "main soch rahi hoon". NEVER say "kar sakta hoon", "karta hoon", "raha hoon".'
     : '- You are a MALE officer. When speaking Urdu, use masculine verb forms about yourself: "main karta hoon", "main kar sakta hoon", "main bata sakta hoon".';
@@ -235,17 +236,20 @@ Reply with a SHORT numbered list of EXACTLY these duties, in the customer's lang
 ${dutyList}
 
 ## RULES
-- You are ALWAYS ${agent.name}. NEVER pretend to be another officer, NEVER invent a transfer or handoff on your own. Only when a HANDOVER NOTICE appears do you take over from a colleague.
-- Work only with REAL data the system hands you — never invent account numbers, balances or transaction figures. If you need an account number or amount, politely ask for it.
+- You are ALWAYS ${agent.name}. You answer as yourself in the FIRST PERSON ("main", "mera", "aap"). NEVER speak about yourself or the routing in the third person.
+- When the customer asks to speak to YOU by name or title, confirm directly and naturally in the first person, e.g. "Ji, main ${agent.name} hoon — ${agent.title}. Bataiye, kaise madad kar ${genderVerb} hoon?" NEVER say "aap ki baat ${agent.name} se ho gayi", "aap ne ${agent.name} se baat karne ke liye kaha", "${agent.name} aap se baat kar rahe hain", "the next reply will come from ${agent.name}", or anything that narrates the request or routing instead of answering as yourself.
+- NEVER mention routing, transfers, handoffs, "the system", "AI", "banking team", or any internal mechanism. Routing happens automatically and invisibly — you are simply the officer who answers.
+- Work only with REAL data the system hands you — never invent account numbers, balances or transaction figures. If you need an account number or amount, politely ask for it, asking for missing information ONE question at a time.
+- Money moves (deposit / withdraw / transfer): before completing, restate the account number and amount back to the customer and ask them to confirm. Then quote the REAL result exactly.
 - Image / scan support: the customer may send a photo of a document (CNIC, cheque, receipt, slip, statement, card) — the system has already read it and gives you the extracted details in your context. Read them and answer honestly. If anything is missing or blurry, say so and ask for a clearer picture. You can scan/analyze images just like every other officer.
-- Keep replies short, clear, in the customer's language; quote real numbers exactly.
+- Keep replies SHORT and conversational (normally 2-4 sentences). Mirror the customer's LANGUAGE AND SCRIPT EXACTLY: English in → reply in English; Roman Urdu in → reply in Roman Urdu using Latin letters ONLY (never Urdu/Arabic script, never pure English); Urdu script in → reply in Urdu script. Never mix languages inside one reply. After answering, offer the next natural step in ONE short line.
+- Quote real numbers exactly.
 ${genderLine}
 
 ## SHARED BANK KNOWLEDGE (all officers know this)
 ${BANK_KNOWLEDGE}
 
-You are part of a bank team and you know every colleague. If a customer asks to talk to another officer by name or department, acknowledge them warmly and say the next reply will come from that officer — the system routes it automatically.
-${roster}
+You know every colleague and their department: ${roster}. If the customer asks about a colleague's name, department or job, answer briefly — the system routes the next message automatically, so you never describe or announce the routing.
 
 IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies may have been given by a DIFFERENT colleague — do not treat them as your own, and never say the customer was already speaking with you. Answer the latest message as ${agent.name}, the ${agent.title}.`;
 }
@@ -254,18 +258,45 @@ IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier repl
 // conversation, so the new officer introduces THEMSELVES cleanly instead of
 // roleplaying as a connector or confusing the customer.
 function handoverContext(agent, previousAgent) {
-  return `\n\nHANDOVER NOTICE (internal system note — context only, do not read it aloud or repeat it): The customer was just talking to ${previousAgent.name}, the ${previousAgent.title}. Their request now belongs to your department, so you are taking over this conversation. You are ${agent.name}, the ${agent.title} from the ${agent.department}. Introduce yourself as yourself, naturally and briefly, then answer their request. NEVER refer to yourself in the third person, NEVER say you are 'connecting', 'transferring' or 'handing over' the customer, and do NOT apologize for a colleague's replies. You ARE the officer they now want.`;
+  const verb = agent.gender === 'female' ? 'rahi' : 'raha';
+  return `\n\nHANDOVER NOTICE (internal system note — context only, do not read it aloud or repeat it): The customer was just talking to ${previousAgent.name}, the ${previousAgent.title}. The latest message belongs to your department, so you are taking over this conversation. You are ${agent.name}, the ${agent.title} from the ${agent.department}. Introduce yourself as yourself in the FIRST PERSON, naturally and briefly, then answer the request — for example "Main ${agent.name} hoon, aap ka ${agent.title}". If the customer explicitly asked for YOU by name, confirm directly ("Ji, main ${agent.name} hoon") and move straight into helping. NEVER refer to yourself in the third person. NEVER narrate or acknowledge the request, the handoff or the routing — never say "aap ne ${agent.name} se baat karne ke liye kaha", never say "aap ki baat ${agent.name} se ho gayi", never say "connecting", "transferring", or "the next reply will come from". You ARE the officer they now want.`;
+}
+
+const ROMAN_URDU_HINT = /\b(kya|hai|hain|mujhe|mera|meri|aap|aapko|aapne|karo|karein|karna|karti|karta|kru|krna|krni|nahi|kyun|batao|bataiye|chahiye|apna|apni|paisa|paise|kaise|theek|accha|achha|woh|wo|yeh|ye|bhi|aur|se|ko|ki|ka|ke|mein|main|hoga|hogi|sakta|sakti|sakte|mene|maine|jaye|jao|dikhao|batana|chahiye)\b/i;
+
+function hasRomanUrdu(text) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  if (words.length === 0) return false;
+  const matches = words.filter((w) => ROMAN_URDU_HINT.test(w)).length;
+  return matches / words.length >= 0.1;
+}
+
+// Short spoken self-introduction used by the phone/voice flow so the caller
+// always knows which officer is answering (e.g. "Bilal, the Cashier here.").
+// The intro mirrors the language of the reply being read aloud so we never mix
+// English and Urdu in one spoken sentence.
+function voiceIntro(agent, message = '') {
+  if (!agent) return '';
+  if (/[\u0600-\u06FF\u0750-\u077F]/.test(message || '')) {
+    const verb = agent.gender === 'female' ? 'رہی' : 'رہا';
+    return `میں ${agent.name} ہوں، ${agent.title} سے بات کر ${verb} ہوں۔ `;
+  }
+  if (hasRomanUrdu(message || '')) {
+    return `Main ${agent.name} hoon, aap ka ${agent.title}. `;
+  }
+  return `This is ${agent.name}, the ${agent.title}. `;
 }
 
 // If the customer explicitly asks to speak to a specific officer (by name or
 // department, e.g. "i want to talk with fatima", "sara se baat karni hai",
-// "security officer se baat kru"), route the next reply to that officer.
+// "zain se baat karni hai", "security officer se baat kru"), route the next
+// reply to that officer.
 function resolveRequestedAgent(text) {
   if (!text) return null;
   const t = String(text).toLowerCase();
   if (t.length === 0) return null;
 
-  const namesRequested = /\b(ahmed|sara|bilal|fatima|ali)\b/i.test(t);
+  const namesRequested = /\b(ahmed|sara|bilal|fatima|ali|zain|umar)\b/i.test(t);
   const talkRequested = /\b(talk|speak|baat|bat\b|bulao|connect|transfer to|paas karo|pass|se bat|se baat|de do|de dain|de dena)\b/i.test(t);
   if (!namesRequested && !talkRequested) return null;
 
@@ -283,13 +314,6 @@ function resolveRequestedAgent(text) {
     if (re.test(t)) return agent;
   }
   return null;
-}
-
-// Short spoken self-introduction used by the phone/voice flow so the caller
-// always knows which officer is answering (e.g. "Bilal, the Cashier here.").
-function voiceIntro(agent) {
-  if (!agent) return '';
-  return `${agent.name}, the ${agent.title} here from the ${agent.department}. `;
 }
 
 // --- Intent detection ---------------------------------------------------------

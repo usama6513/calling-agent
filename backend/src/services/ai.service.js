@@ -475,6 +475,8 @@ const ROMAN_URDU_WORDS = [
   'khatam', 'shuru', 'se', 'ko', 'ki', 'ke', 'ka', 'mein', 'main', 'bhi', 'aur',
   'hota', 'hoti', 'hote', 'hogaya', 'hogayi', 'gaya', 'gayi', 'gai', 'jao', 'jaoge',
   'karo', 'kriye', 'kijiye', 'aa', 'aya', 'ayi', 'aaya', 'aayi', 'hai', 'hain',
+  'kr', 'krna', 'krni', 'kru', 'kro', 'mene', 'maine', 'dikhao', 'hona', 'jaye',
+  'bata', 'krta', 'krte', 'krke', 'karun', 'karne', 'dena', 'lena', 'hoga',
 ];
 
 // High-confidence words that almost never appear in English
@@ -953,7 +955,7 @@ Be precise and factual. If text is cut off, blurry, or unreadable, say exactly t
     const channelContext = channel === 'phone'
       ? '\n\nCHANNEL: Phone Call - Keep responses natural for voice. Be concise. Avoid bullet points and long lists. Use short, easy-to-pronounce sentences.'
       : channel === 'voice'
-      ? '\n\nCHANNEL: Voice (speech only) - The user is speaking to you and your answer will be READ ALOUD by a text-to-speech system. Requirements: 1) Keep the answer SHORT (under 90 words when possible). 2) Use plain conversational speech - NO bullet points, NO numbered lists, NO markdown, NO asterisks, NO emojis, NO URLs. 3) Use short, natural, easy-to-pronounce sentences. 4) Speak like a real person on a call. 5) If there are multiple steps, say "First..." then "Second..." in normal spoken words. 6) Never reveal that you are an AI - just sound natural and helpful. 7) If replying in Urdu, use proper PAKISTANI URDU - never Hindi/Hindustani vocabulary, never Devanagari script, use words like chahiye, karein, bataen, madad, paisa.'
+      ? '\n\nCHANNEL: Voice (speech only) - The user is speaking to you and your answer will be READ ALOUD by a text-to-speech system. Requirements: 1) Keep the answer SHORT (under 90 words when possible). 2) Use plain conversational speech - NO bullet points, NO numbered lists, NO markdown, NO asterisks, NO emojis, NO URLs. 3) Use short, natural, easy-to-pronounce sentences. 4) Speak like a real person on a call. 5) If there are multiple steps, say "First..." then "Second..." in normal spoken words. 6) Never reveal that you are an AI - just sound natural and helpful. 7) MATCH THE CALLER\'S LANGUAGE AND SCRIPT EXACTLY: English if they spoke English, ROMAN URDU (Latin letters only) if they spoke Roman Urdu, and Urdu script if they spoke Urdu script. Never reply in a different language than the one the caller just used. 8) If replying in Urdu, use proper PAKISTANI URDU - never Hindi/Hindustani vocabulary, never Devanagari script, use words like chahiye, karein, bataen, madad, paisa.'
       : channel === 'whatsapp'
       ? '\n\nCHANNEL: WhatsApp - You can use emojis moderately. Keep messages readable.'
       : '\n\nCHANNEL: Web Chat - You can use formatting for clarity.';

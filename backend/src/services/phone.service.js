@@ -66,7 +66,7 @@ class PhoneService {
     let spoken = result.message;
     let voiceName = this.getVoiceName();
     if (business.type === 'banking' && result.agent) {
-      spoken = `${BankingAgents.voiceIntro(result.agent)}${spoken}`;
+      spoken = `${BankingAgents.voiceIntro(result.agent, result.message)}${spoken}`;
       voiceName = this.getVoiceName(result.agent.gender);
     }
 

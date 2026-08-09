@@ -43,6 +43,8 @@ interface InboxMsg {
   ts: string;
   attachmentId?: string;
   imgPreview?: string;
+  voiceNote?: boolean;
+  audioUrl?: string;
 }
 
 const AGENT_EMOJI: Record<string, string> = {
@@ -100,6 +102,7 @@ export default function BankingPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [pendingAttachment, setPendingAttachment] = useState<{ id: string; filename: string; mimeType: string; url: string; preview?: string } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -210,10 +213,11 @@ export default function BankingPage() {
     return null;
   }
 
-  async function sendInbox(text?: string, opts?: { channel?: string; attachmentId?: string | null; micLabel?: boolean }) {
+  async function sendInbox(text?: string, opts?: { channel?: string; attachmentId?: string | null; micLabel?: boolean; voiceReply?: boolean }) {
     const message = (text ?? inboxInput).trim();
     if ((!message && !pendingAttachment && opts?.attachmentId === undefined) || !bizId || inboxLoading) return;
     const channel = opts?.channel || 'banking';
+    const voiceReply = opts?.voiceReply === true;
     const attachmentId = opts?.attachmentId !== undefined ? opts.attachmentId : (pendingAttachment?.id || undefined);
     const hasAttachment = !!attachmentId;
     setInboxInput('');
@@ -232,8 +236,19 @@ export default function BankingPage() {
         setConvId(data.data.conversationId);
         const agent = data.data.agent || null;
         const reply = data.data.message;
-        setMsgs((prev) => [...prev, { role: 'assistant', content: reply, agent, ts: new Date().toISOString() }]);
-        if (autoSpeak) speakAgentReply(agent, reply);
+        if (voiceReply) {
+          // Voice in → voice out: reply with a playable voice note, no text.
+          try {
+            const url = await synthesizeAudio(reply, agent?.gender);
+            setMsgs((prev) => [...prev, { role: 'assistant', content: reply, agent, ts: new Date().toISOString(), voiceNote: true, audioUrl: url }]);
+            if (autoSpeak) playAudio(url, url);
+          } catch {
+            setMsgs((prev) => [...prev, { role: 'assistant', content: reply, agent, ts: new Date().toISOString() }]);
+          }
+        } else {
+          setMsgs((prev) => [...prev, { role: 'assistant', content: reply, agent, ts: new Date().toISOString() }]);
+          if (autoSpeak) speakAgentReply(agent, reply);
+        }
       } else {
         setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', ts: new Date().toISOString() }]);
       }
@@ -252,19 +267,32 @@ export default function BankingPage() {
     return data.data.text;
   }
 
-  async function synthesizeAudio(text: string): Promise<string> {
-    const blob = await api.voice.synthesize(text);
+  async function synthesizeAudio(text: string, gender?: string): Promise<string> {
+    const blob = await api.voice.synthesize(text, gender);
     return URL.createObjectURL(blob);
+  }
+
+  function playAudio(url: string, key: string) {
+    const audio = audioRef.current;
+    if (!audio || !url) return;
+    if (playingKey === key && !audio.paused) {
+      audio.pause();
+      setPlayingKey(null);
+      return;
+    }
+    audio.src = url;
+    audio.play().catch(() => {});
+    setPlayingKey(key);
+    audio.onended = () => setPlayingKey(null);
+    audio.onpause = () => setPlayingKey(null);
   }
 
   async function speakAgentReply(agent: AgentInfo | null, reply: string) {
     const audio = audioRef.current;
     if (!audio) return;
-    const spoken = agent ? `${agent.name}, the ${agent.title} here. ${reply}` : reply;
     try {
-      const url = await synthesizeAudio(spoken);
-      audio.src = url;
-      await audio.play();
+      const url = await synthesizeAudio(reply, agent?.gender);
+      playAudio(url, reply + '|' + Date.now());
     } catch (error) {
       console.warn('[Banking Inbox] TTS failed, using browser TTS:', error);
       if ('speechSynthesis' in window) {
@@ -283,6 +311,7 @@ export default function BankingPage() {
       if (!next) {
         const audio = audioRef.current;
         if (audio) audio.pause();
+        setPlayingKey(null);
         if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       }
       return next;
@@ -327,7 +356,7 @@ export default function BankingPage() {
         setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not hear you. Please try again.', ts: new Date().toISOString() }]);
         return;
       }
-      await sendInbox(transcript, { channel: 'voice', micLabel: true });
+      await sendInbox(transcript, { channel: 'voice', micLabel: true, voiceReply: true });
     } catch (error) {
       console.error('[Banking Inbox] Voice input error:', error);
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not process your voice message.', ts: new Date().toISOString() }]);
@@ -696,12 +725,32 @@ export default function BankingPage() {
                           className="max-w-[220px] max-h-[220px] rounded-lg border border-gray-200 mb-2"
                         />
                       )}
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                      {m.voiceNote && m.audioUrl ? (
+                        <div className="flex items-center gap-3 min-w-[190px] py-0.5">
+                          <button
+                            onClick={() => playAudio(m.audioUrl || '', m.audioUrl || '')}
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-lg shadow-md hover:scale-105 transition-transform shrink-0"
+                            title="Play / pause voice reply"
+                          >
+                            {playingKey === m.audioUrl ? '⏸' : '▶'}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="w-14 h-2 bg-emerald-100 rounded-full overflow-hidden">
+                                <div className={`h-full w-full bg-emerald-500 rounded-full ${playingKey === m.audioUrl ? 'animate-pulse' : ''}`}></div>
+                              </div>
+                              <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Voice reply</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                      )}
                     </div>
                     <div className={`text-[11px] text-gray-400 mt-1 px-1 flex items-center gap-2 ${m.role === 'user' ? 'justify-end' : ''}`}>
                       {m.role === 'assistant' && m.agent ? `${m.agent.name} · ${m.agent.title} · ` : ''}
                       {new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {m.role === 'assistant' && (
+                      {m.role === 'assistant' && !m.voiceNote && (
                         <button
                           onClick={() => speakAgentReply(m.agent || null, m.content)}
                           title="Play voice reply"
