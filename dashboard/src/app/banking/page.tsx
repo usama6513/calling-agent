@@ -41,6 +41,8 @@ interface InboxMsg {
   content: string;
   agent?: AgentInfo | null;
   ts: string;
+  attachmentId?: string;
+  imgPreview?: string;
 }
 
 const AGENT_EMOJI: Record<string, string> = {
@@ -93,6 +95,17 @@ export default function BankingPage() {
   const [loadingOldChats, setLoadingOldChats] = useState(false);
   const inboxEndRef = useRef<HTMLDivElement>(null);
   const INBOX_CHANNEL = 'banking';
+
+  // --- Inbox voice + scan state ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [pendingAttachment, setPendingAttachment] = useState<{ id: string; filename: string; mimeType: string; url: string; preview?: string } | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   async function load() {
     try {
@@ -197,18 +210,30 @@ export default function BankingPage() {
     return null;
   }
 
-  async function sendInbox(text?: string) {
+  async function sendInbox(text?: string, opts?: { channel?: string; attachmentId?: string | null; micLabel?: boolean }) {
     const message = (text ?? inboxInput).trim();
-    if (!message || !bizId || inboxLoading) return;
+    if ((!message && !pendingAttachment && opts?.attachmentId === undefined) || !bizId || inboxLoading) return;
+    const channel = opts?.channel || 'banking';
+    const attachmentId = opts?.attachmentId !== undefined ? opts.attachmentId : (pendingAttachment?.id || undefined);
+    const hasAttachment = !!attachmentId;
     setInboxInput('');
-    setMsgs((prev) => [...prev, { role: 'user', content: message, ts: new Date().toISOString() }]);
+    const display = opts?.micLabel && message
+      ? '🎤 ' + message
+      : message
+        ? message
+        : `📎 ${pendingAttachment?.filename || 'Attachment'}`;
+    setMsgs((prev) => [...prev, { role: 'user', content: display, ts: new Date().toISOString(), attachmentId: hasAttachment ? attachmentId : undefined, imgPreview: hasAttachment ? pendingAttachment?.preview : undefined }]);
+    if (hasAttachment) setPendingAttachment(null);
     setInboxLoading(true);
     try {
       const cid = await ensureConv();
-      const data = await api.chat.send(bizId, message, cid || undefined, INBOX_CHANNEL);
+      const data = await api.chat.send(bizId, message, cid || undefined, channel, hasAttachment ? attachmentId : undefined);
       if (data.success) {
         setConvId(data.data.conversationId);
-        setMsgs((prev) => [...prev, { role: 'assistant', content: data.data.message, agent: data.data.agent || null, ts: new Date().toISOString() }]);
+        const agent = data.data.agent || null;
+        const reply = data.data.message;
+        setMsgs((prev) => [...prev, { role: 'assistant', content: reply, agent, ts: new Date().toISOString() }]);
+        if (autoSpeak) speakAgentReply(agent, reply);
       } else {
         setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, something went wrong.', ts: new Date().toISOString() }]);
       }
@@ -216,6 +241,124 @@ export default function BankingPage() {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Could not connect to the banking team.', ts: new Date().toISOString() }]);
     }
     setInboxLoading(false);
+  }
+
+  // --- Voice input (voice-to-voice) ---
+  async function transcribeAudio(blob: Blob): Promise<string> {
+    const formData = new FormData();
+    formData.append('audio', blob, 'voice.webm');
+    const data = await api.voice.transcribe(formData);
+    if (!data.success || !data.data?.text) throw new Error('Transcription failed');
+    return data.data.text;
+  }
+
+  async function synthesizeAudio(text: string): Promise<string> {
+    const blob = await api.voice.synthesize(text);
+    return URL.createObjectURL(blob);
+  }
+
+  async function speakAgentReply(agent: AgentInfo | null, reply: string) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const spoken = agent ? `${agent.name}, the ${agent.title} here. ${reply}` : reply;
+    try {
+      const url = await synthesizeAudio(spoken);
+      audio.src = url;
+      await audio.play();
+    } catch (error) {
+      console.warn('[Banking Inbox] TTS failed, using browser TTS:', error);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(reply.replace(/[*_`#]/g, ''));
+        u.lang = /[\u0600-\u06FF]/.test(reply) ? 'ur-PK' : 'en-US';
+        u.rate = 1.1;
+        window.speechSynthesis.speak(u);
+      }
+    }
+  }
+
+  function toggleAutoSpeak() {
+    setAutoSpeak((v) => {
+      const next = !v;
+      if (!next) {
+        const audio = audioRef.current;
+        if (audio) audio.pause();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      }
+      return next;
+    });
+  }
+
+  async function toggleVoiceInput() {
+    if (isRecording) {
+      if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Voice recording is not supported in this browser. Use Chrome, Edge, or Firefox.', ts: new Date().toISOString() }]);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        if (blob.size > 0) await handleVoiceBlob(blob);
+      };
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Microphone access was denied.', ts: new Date().toISOString() }]);
+    }
+  }
+
+  async function handleVoiceBlob(blob: Blob) {
+    setVoiceBusy(true);
+    try {
+      const transcript = await transcribeAudio(blob);
+      if (!transcript.trim()) {
+        setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not hear you. Please try again.', ts: new Date().toISOString() }]);
+        return;
+      }
+      await sendInbox(transcript, { channel: 'voice', micLabel: true });
+    } catch (error) {
+      console.error('[Banking Inbox] Voice input error:', error);
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not process your voice message.', ts: new Date().toISOString() }]);
+    } finally {
+      setVoiceBusy(false);
+    }
+  }
+
+  // --- Image / document scan ---
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      let cid = convId;
+      if (!cid) cid = await ensureConv();
+      if (!cid) throw new Error('No conversation');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', cid);
+      const data = await api.upload(formData);
+      if (data.success) {
+        const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+        setPendingAttachment({ id: data.data.id, filename: data.data.filename, mimeType: data.data.mimeType, url: data.data.url, preview });
+      } else {
+        setMsgs((prev) => [...prev, { role: 'assistant', content: 'Upload failed: ' + (data.error || 'Unknown error'), ts: new Date().toISOString() }]);
+      }
+    } catch (error) {
+      console.error('[Banking Inbox] Upload error:', error);
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Could not upload the file. Please try again.', ts: new Date().toISOString() }]);
+    }
   }
 
   async function loadOldChats() {
@@ -453,11 +596,18 @@ export default function BankingPage() {
               <div>
                 <div className="font-bold text-gray-900">Banking Agent Team {bizName ? `— ${bizName}` : ''}</div>
                 <div className="text-xs text-gray-500">
-                  Sara · Bilal · Ahmed · Zain · Fatima · Umar · Ali — your message is routed to the right officer
+                  Text, voice, or image scans — every message goes to the right officer (Sara · Bilal · Ahmed · Zain · Fatima · Umar · Ali)
                 </div>
               </div>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={toggleAutoSpeak}
+                title={autoSpeak ? 'Mute voice replies' : 'Unmute voice replies'}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${autoSpeak ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
+                {autoSpeak ? '🔊 Voice replies' : '🔇 Muted'}
+              </button>
               <button onClick={loadOldChats} className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200">
                 📁 Previous Chats
               </button>
@@ -509,8 +659,9 @@ export default function BankingPage() {
                 </div>
                 <h2 className="text-xl font-bold text-gray-800 mb-2">Talk to the Banking Agent Team</h2>
                 <p className="text-sm text-gray-500 mb-6 text-center max-w-md">
-                  Every message is routed to the right officer — Sara (statement/stats), Bilal (cash), Ahmed (accounts),
-                  Zain (loans), Fatima (security), Umar (manager: opening/closing, tax, zakat), Ali (support).
+                  Type a message, tap 🎤 to speak, or 📎 send a photo of any document (CNIC, cheque, receipt, statement, card) —
+                  every officer can scan and analyze it. Sara (statement/stats), Bilal (cash), Ahmed (accounts), Zain (loans),
+                  Fatima (security), Umar (manager: opening/closing, tax, zakat), Ali (support).
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg w-full">
                   {QUICK_PROMPTS.map((q) => (
@@ -538,11 +689,27 @@ export default function BankingPage() {
                         ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-md'
                         : 'bg-white text-gray-800 border border-gray-100 rounded-bl-md'
                     }`}>
+                      {m.imgPreview && (
+                        <img
+                          src={m.imgPreview}
+                          alt="Attached"
+                          className="max-w-[220px] max-h-[220px] rounded-lg border border-gray-200 mb-2"
+                        />
+                      )}
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
                     </div>
-                    <div className={`text-[11px] text-gray-400 mt-1 px-1 ${m.role === 'user' ? 'text-right' : ''}`}>
+                    <div className={`text-[11px] text-gray-400 mt-1 px-1 flex items-center gap-2 ${m.role === 'user' ? 'justify-end' : ''}`}>
                       {m.role === 'assistant' && m.agent ? `${m.agent.name} · ${m.agent.title} · ` : ''}
                       {new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {m.role === 'assistant' && (
+                        <button
+                          onClick={() => speakAgentReply(m.agent || null, m.content)}
+                          title="Play voice reply"
+                          className="text-blue-500 hover:text-blue-700 text-xs font-semibold"
+                        >
+                          🔊
+                        </button>
+                      )}
                     </div>
                   </div>
                   {m.role === 'user' && (
@@ -569,26 +736,64 @@ export default function BankingPage() {
             <div ref={inboxEndRef} />
           </div>
 
-          <div className="border-t border-gray-200 p-4 bg-white">
-            <div className="flex items-end gap-3">
+          <div className="border-t border-gray-200 bg-white">
+            {pendingAttachment && (
+              <div className="border-b border-gray-200 p-3 bg-gray-50 flex items-center gap-3">
+                {pendingAttachment.preview ? (
+                  <img src={pendingAttachment.preview} alt={pendingAttachment.filename} className="w-14 h-14 object-cover rounded-lg border border-gray-200" />
+                ) : (
+                  <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-xl">📄</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-800 truncate">{pendingAttachment.filename}</div>
+                  <div className="text-xs text-gray-500">Scan ready — press send to let the agent analyze it</div>
+                </div>
+                <button onClick={() => setPendingAttachment(null)} className="text-gray-400 hover:text-gray-600 px-2 text-lg" title="Remove">✕</button>
+              </div>
+            )}
+            <div className="p-4 flex items-end gap-3">
               <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                 <textarea
                   value={inboxInput}
                   onChange={(e) => setInboxInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendInbox(); } }}
-                  placeholder="Type your message for the banking team... (e.g. stats do, 5000 deposit karo)"
+                  placeholder="Type, speak with 🎤, or scan a document with 📎... (e.g. stats do, 5000 deposit karo)"
                   rows={1}
                   className="w-full px-4 py-3 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none resize-none"
-                  disabled={inboxLoading}
+                  disabled={inboxLoading || voiceBusy}
                 />
               </div>
               <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={inboxLoading || voiceBusy}
+                title="Attach / scan a document (CNIC, cheque, receipt, statement, card)"
+                className="w-11 h-11 rounded-2xl bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 flex items-center justify-center text-lg shrink-0 transition-all"
+              >
+                📎
+              </button>
+              <button
+                onClick={toggleVoiceInput}
+                disabled={inboxLoading || voiceBusy}
+                title={isRecording ? 'Stop recording' : 'Record voice message'}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg shrink-0 transition-all disabled:opacity-40 ${isRecording ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                {isRecording ? '⏹' : '🎤'}
+              </button>
+              <button
                 onClick={() => sendInbox()}
-                disabled={!inboxInput.trim() || inboxLoading}
+                disabled={(!inboxInput.trim() && !pendingAttachment) || inboxLoading || voiceBusy}
                 className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-200 transition-all shrink-0 text-lg"
               >
                 ➤
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.docx,.doc,.txt,.md,.csv,.json"
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+              />
+              <audio ref={audioRef} style={{ display: 'none' }} />
             </div>
           </div>
         </div>

@@ -814,6 +814,18 @@ class AIService {
 Describe what you see in detail — crop stage, field conditions, equipment, farming method (traditional/modern/organic), and provide relevant agricultural advice.
 
 BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give practical advice a farmer can implement immediately. Reply in the same language context the user is using (Urdu/Roman Urdu/English).`
+        : businessType === 'banking'
+        ? `You are a banking document scanner. Analyze this image carefully and extract ALL relevant banking information.
+
+- If it is a CNIC / Pakistani ID card: extract the CNIC number (XXXXX-XXXXXXX-X), full name, father's name, gender, date of birth, address, and validity. If a section is not visible or blurry, say "not visible" — never guess.
+- If it is a cheque: extract cheque number, date, payee name, amount in figures and words, drawer name, and whether it is signed.
+- If it is a deposit/withdrawal/transfer slip or receipt: extract amount, date, account number (keep the full number, the officer will use it), reference/transaction number, branch, and type of transaction.
+- If it is a bank statement: extract the account number, customer name, period, and each transaction (date, description, debit/credit, balance).
+- If it is a debit/ATM card: extract the card type, last 4 digits, expiry, and cardholder name. NEVER extract or reveal the full PAN or CVV.
+- If it is a photo of cash/money: describe the notes/bills and estimate the total value if visible.
+- If it is any other image (foreign ID, property document, utility bill, etc.): extract the key fields honestly and flag anything unclear.
+
+Be precise and factual. If text is cut off, blurry, or unreadable, say exactly that. Never invent numbers, names, or details that are not actually visible in the image.`
         : 'Describe this image in detail. Include any visible text, objects, people, crops, plants, animals, signs, or conditions shown. Be specific and factual.';
       const description = await this.describeImage(buffer, mime, attachment.filename, promptOverride);
       return `[Attachment: ${attachment.filename} (Image: ${mime})]\nIMAGE DESCRIPTION:\n${description}`;

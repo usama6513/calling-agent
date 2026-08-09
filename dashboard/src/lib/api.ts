@@ -82,10 +82,10 @@ function redirectToLogin(): void {
 
 export const api = {
   chat: {
-    send: (businessId: string, message: string, conversationId?: string, channel?: string) =>
+    send: (businessId: string, message: string, conversationId?: string, channel?: string, attachmentId?: string) =>
       authFetch('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({ businessId, message, conversationId, channel }),
+        body: JSON.stringify({ businessId, message, conversationId, channel, attachmentId }),
       }),
     ensureConversation: (businessId: string, channel = 'web') =>
       authFetch('/api/chat/ensure-conversation', {
@@ -93,6 +93,23 @@ export const api = {
         body: JSON.stringify({ businessId, channel }),
       }),
   },
+
+  voice: {
+    transcribe: (formData: FormData) =>
+      fetch(`${API_BASE}/api/voice/transcribe`, {
+        method: 'POST',
+        body: formData,
+      }).then((r) => r.json()),
+    synthesize: (text: string) =>
+      fetch(`${API_BASE}/api/voice/synthesize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      }).then((r) => r.blob()),
+  },
+
+  upload: (formData: FormData) =>
+    authFetch('/api/upload', { method: 'POST', body: formData }),
 
   business: {
     getAll: (page = 1, limit = 10) =>
