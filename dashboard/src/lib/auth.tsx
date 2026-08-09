@@ -25,6 +25,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null as any);
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 12000): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = getToken();
       if (!token) {
         // Try refresh token cookie
-        const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+        const res = await fetchWithTimeout(`${API_BASE}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -61,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         return;
       }
-      const res = await fetch(`${API_BASE}/api/auth/me`, {
+      const res = await fetchWithTimeout(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
@@ -70,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.data.user);
       } else if (res.status === 401) {
         // Access token expired — try refresh
-        const r2 = await fetch(`${API_BASE}/api/auth/refresh`, {
+        const r2 = await fetchWithTimeout(`${API_BASE}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         });

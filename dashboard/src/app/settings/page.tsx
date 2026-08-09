@@ -82,21 +82,24 @@ export default function SettingsPage() {
   }, [selectedBusinessId, businesses]);
 
   const loadData = async () => {
-    try {
-      const [bizData, modelData] = await Promise.all([
-        authFetch('/api/business'),
-        authFetch('/api/groq/models'),
-      ]);
-      setBusinesses(bizData.data || []);
-      setModels(modelData.data || []);
-      if (bizData.data?.length) {
-        setSelectedBusinessId(bizData.data[0].id);
+    setLoading(true);
+    const [bizRes, modelRes] = await Promise.allSettled([
+      authFetch('/api/business?page=1&limit=200'),
+      authFetch('/api/groq/models'),
+    ]);
+    const bizData = bizRes.status === 'fulfilled' ? bizRes.value : null;
+    const modelData = modelRes.status === 'fulfilled' ? modelRes.value : null;
+    if (bizData?.data?.length) {
+      setBusinesses(bizData.data);
+      setSelectedBusinessId(bizData.data[0].id);
+    } else {
+      setBusinesses([]);
+      if (bizRes.status === 'rejected') {
+        setMessage({ type: 'error', text: 'Failed to load businesses. Check server connection.' });
       }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to load data. Check server connection.' });
-    } finally {
-      setLoading(false);
     }
+    if (modelData?.data) setModels(modelData.data);
+    setLoading(false);
   };
 
   const canManageBusiness = (b?: Business | null) =>
