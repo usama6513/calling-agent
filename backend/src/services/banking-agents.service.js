@@ -131,6 +131,42 @@ const BANK_KNOWLEDGE = `
 - This is an ISLAMIC (Shariah-compliant) digital bank. There is NO conventional interest (riba) anywhere in the bank.
 - Deposits earn PROFIT (not interest); all loans and financing use Shariah-compliant modes (markup/murabaha/ijarah). NEVER call deposits return, loans cost, or any charge "interest" or "riba" — always say "profit" and "markup".
 - If the customer asks "ye Islamic bank hai ya commercial/conventional?" → answer clearly and briefly: "Ye ek Islamic (Shariah-compliant) digital bank hai. Yahan koi riba ya interest nahi hai — deposits pe profit milta hai aur financing Shariah-compliant modes, jaise markup, pe hoti hai."
+- The bank is licensed and supervised by the State Bank of Pakistan (SBP), and every depositor's money is protected under the Deposit Protection Corporation (DPC) up to Rs 1,000,000 per depositor per bank.
+### State Bank of Pakistan (SBP) — the regulator
+- SBP is Pakistan's central bank, established in 1948 under the State Bank of Pakistan Act, 1956. Head office: Karachi; operates from 16 offices across Pakistan.
+- Main roles: issue currency (rupee notes & coins), set the policy (benchmark) interest rate, regulate and supervise ALL banks and DFIs, manage payment systems, hold foreign exchange reserves, and keep the financial system stable.
+- Key laws SBP enforces: State Bank of Pakistan Act 1956, Banking Companies Ordinance 1962, Prudential Regulations, and AML/CFT (anti-money laundering) rules under the Anti-Money Laundering Act 2010.
+- SBP licenses every bank in Pakistan — including digital banks (licensed under the BCO 1962 and declared scheduled banks) — and has the power to revoke licences, appoint administrators and impose penalties.
+- Payment systems run by SBP: Raast (instant PKR person-to-person and bill payments, 24/7, launched 2021), PRISM (RTGS for large-value bank-to-bank settlements), and 1-Link/MNET (ATM & interbank). Roshan Digital Account (RDA) lets overseas Pakistanis open and operate accounts remotely.
+- Banking Mohtasib Pakistan handles individual customer complaints against banks FREE of cost: www.bankingmohtasib.org.pk or call 021-111-727-272. SBP also runs a Consumer Help Desk (0311-7272722 / 021-32454914) and the Complaints Management System (CMS).
+- Deposit protection: the Deposit Protection Corporation (DPC), a subsidiary of SBP set up under the DPC Act 2016, protects eligible depositors of ALL scheduled banks up to Rs 1,000,000 per depositor per bank (doubled from Rs 500,000). Covers savings, current, fixed deposits, Roshan Digital and branchless accounts; pays out within 30 days if SBP declares a bank failed.
+- "Islamic banking" within SBP is overseen by the Islamic Banking Department (IBD) and the SBP Shariah Board (established 2015), which approves products and issues Shariah standards.
+### Islamic banking laws & Shariah framework (Pakistan)
+- Core Shariah rules of Islamic finance: NO riba (interest/usury) — money must not earn money by itself; NO gharar (excessive uncertainty/ambiguity in contracts); NO maysir/qimar (gambling/speculation); NO investment in haram businesses (alcohol, pork, gambling, conventional interest-based lending); every transaction must be backed by a REAL asset or service; profit is earned by trading assets or sharing risk — profit and loss are shared fairly (risk-sharing), never guaranteed.
+- Pakistan follows these under SBP's "Instructions & Guidelines for Shariah Compliance in Islamic Banking Institutions" (2018) and the Shariah Governance Framework, and largely applies AAOIFI (international Islamic finance standard-setter, Bahrain) Shariah standards.
+- SBP's 3rd five-year Strategic Plan for Islamic Banking (2021-25) targets Islamic banking reaching 30% of industry assets and deposits and 35% of branches; it works on six pillars: legal landscape, regulatory framework, Shariah governance, liquidity management, outreach & market development, and human capital/awareness. Pakistan has 5 full-fledged Islamic banks (Meezan, Dubai Islamic, BankIslami, Al Baraka, MCB Islamic) plus many conventional banks running Islamic windows/branches.
+- Deposits in Islamic banking: a current account is a QARD (the bank borrows the money; you get no profit), while savings and term deposits work on MUDARABAH — the bank invests your money as its mudarib (manager) and you share the PROFIT (profit is not guaranteed; if the bank loses money through no negligence, the deposit principal is still safe but profit may be zero). Never say "interest rate" — say "expected profit rate".
+- Main Islamic financing modes:
+  - MURABAHA: bank buys an asset and sells it to you at cost + an agreed markup (payable in installments) — the classic "markup" sale. Used for cars, machinery, working capital.
+  - IJARAH: leasing — bank buys and leases you the asset for a rental; ownership transfers at the end (ijarah-wal-iqtina). Used for cars, equipment, homes.
+  - MUSHARAKAH: partnership — bank and customer both contribute capital and share profit by agreed ratio and losses by capital share. Diminishing musharakah (bank's share reduces as you buy it out) is the standard home-finance model.
+  - MUDARABAH: capital provider (rabb-ul-mal) gives money to a manager (mudarib); profit shared by agreed ratio, losses borne by the capital provider.
+  - SALAM: full advance payment for goods to be delivered later (used in agriculture/commodity financing).
+  - ISTISNA: contract to manufacture/build something to order with deferred payment (used in construction, plant & machinery).
+  - QARD-E-HASNA: a benevolent, interest-free loan given for a good cause; the bank earns no profit.
+  - WAKALAH: agency — you appoint the bank as your agent to invest your money.
+  - KAFALAH: guarantee (bank guarantees payment on your behalf).
+  - TAKAFUL: Shariah-compliant insurance — a cooperative pool where members contribute to protect each other; there is no riba and surpluses are shared. Not conventional insurance.
+  - SUKUK: Shariah-compliant "Islamic bonds" backed by real assets; holders earn profit (rent) on the asset, not interest.
+- Zakat: 2.5% of savings balance above the Nisab is deducted once a year (1st of Ramadan). Current accounts are not charged zakat.
+- Withholding tax (WHT): 15% income tax is deducted from profit paid on deposits, as per FBR rules.
+### National Bank of Pakistan (NBP)
+- NBP was established in November 1949 under the National Bank of Pakistan Ordinance 1949; head office on I.I. Chundrigar Road, Karachi; listed on the Pakistan Stock Exchange (ticker: NBP).
+- It is Pakistan's largest state-owned (public sector) bank and a subsidiary of the SBP; the Federal Government holds ~75% through SBP. Its motto/positioning: "The Nation's Bank".
+- Originally it acted as the agent of the central bank in places where SBP had no presence and as manager of government treasury accounts — it still acts as trustee of public funds and as SBP's agent for government treasury operations, government payments (salaries, pensions), Hajj banking and student-loan endowment schemes.
+- Scale: ~1,500 branches in Pakistan (incl. ~207 Islamic banking branches) + ~16 overseas branches across the Middle East, US, Europe, South/Central Asia; total assets ~Rs 6.7 trillion (~14% of the whole banking industry). It is designated a Domestic Systemically Important Bank (D-SIB) by SBP and is the most-capitalized bank in the country (CAR ~27.8% in 2024).
+- Services: retail & consumer banking, corporate & investment banking, treasury, trade & forex, Islamic banking, home remittances (overseas Pakistanis), agriculture financing, asset management, leasing, modaraba, broking and underwriting.
+- For this conversation, NBP is a DIFFERENT bank — if a customer asks to send money to an NBP account or asks about NBP's products, explain that we are an Islamic digital bank and transfers to other banks work through the standard interbank system (IBFT via Raast/1-Link); share general facts about NBP only when the customer is asking for information or comparison.
 ### Account opening
 - Opening a NEW account (digital): choose Savings or Current -> provide CNIC (Pakistani ID) + recent photo -> make the initial deposit (Savings Rs 1,000) -> account number is issued instantly.
 - Opening charges: Savings account opening is FREE (digital). Current account has a one-time opening fee of Rs 500.
