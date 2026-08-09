@@ -629,7 +629,7 @@ class AIService {
     const models = GEMINI_MODELS.length > 0 ? GEMINI_MODELS : ['gemini-flash-latest'];
     let lastError = null;
     for (const model of models) {
-      const attempts = model === models[0] ? 2 : 1;
+      const attempts = model === models[0] ? 3 : 1;
       for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
           const res = await fetch(
@@ -645,7 +645,7 @@ class AIService {
             lastError = new Error(`Gemini ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`);
             console.error(`[Gemini Chat] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
             if (res.status === 429 || res.status === 503) {
-              await new Promise((r) => setTimeout(r, 800 * attempt));
+              await new Promise((r) => setTimeout(r, 1500 * attempt));
               continue;
             }
             break;
@@ -657,7 +657,7 @@ class AIService {
         } catch (error) {
           lastError = error;
           console.error(`[Gemini Chat] ${model} Error:`, error.message);
-          if (attempt < attempts) await new Promise((r) => setTimeout(r, 800 * attempt));
+          if (attempt < attempts) await new Promise((r) => setTimeout(r, 1500 * attempt));
         }
       }
     }
@@ -684,35 +684,42 @@ class AIService {
 
     let lastError = null;
     for (const model of OPENROUTER_MODELS) {
-      try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://calling-agent.app',
-            'X-Title': 'Calling Agent',
-          },
-          body: JSON.stringify({
-            model,
-            messages: allMessages,
-            temperature,
-            max_tokens: maxTokens,
-          }),
-        });
-        if (!res.ok) {
-          const errText = await res.text();
-          lastError = new Error(`OpenRouter ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`);
-          console.error(`[OpenRouter Chat] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
-          continue;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'https://calling-agent.app',
+              'X-Title': 'Calling Agent',
+            },
+            body: JSON.stringify({
+              model,
+              messages: allMessages,
+              temperature,
+              max_tokens: maxTokens,
+            }),
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            lastError = new Error(`OpenRouter ${model} HTTP ${res.status}: ${errText.slice(0, 200)}`);
+            console.error(`[OpenRouter Chat] ${model} HTTP ${res.status}:`, errText.slice(0, 200));
+            if ((res.status === 429 || res.status === 503) && attempt < 2) {
+              await new Promise((r) => setTimeout(r, 1500 * attempt));
+              continue;
+            }
+            break;
+          }
+          const data = await res.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) return text.trim();
+          lastError = new Error(`OpenRouter ${model} returned empty response`);
+        } catch (error) {
+          lastError = error;
+          console.error(`[OpenRouter Chat] ${model} Error:`, error.message);
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 1500 * attempt));
         }
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text) return text.trim();
-        lastError = new Error(`OpenRouter ${model} returned empty response`);
-      } catch (error) {
-        lastError = error;
-        console.error(`[OpenRouter Chat] ${model} Error:`, error.message);
       }
     }
     throw lastError || new Error('All OpenRouter models failed');
@@ -1209,7 +1216,11 @@ Follow these rules STRICTLY:
           }
         }
 
-        if (!assistantMessage) throw error;
+        if (!assistantMessage) {
+          const busy = new Error('AI service is temporarily busy. Please try again in a minute.');
+          busy.statusCode = 503;
+          throw busy;
+        }
       } else {
         throw error;
       }
@@ -1299,7 +1310,11 @@ Follow these rules STRICTLY:
             console.error('[generateResponse] OpenRouter also failed:', orError.message);
           }
         }
-        if (!content) throw error;
+        if (!content) {
+          const busy = new Error('AI service is temporarily busy. Please try again in a minute.');
+          busy.statusCode = 503;
+          throw busy;
+        }
       } else {
         throw error;
       }
