@@ -111,7 +111,41 @@ function classifyAgent(text) {
 }
 
 function agentPrompt(agent) {
-  return `\n\nYou are roleplaying as ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job} Your department is responsible for: ${agent.capabilities}. Answer as this officer. You only work with REAL data the system hands you below — never invent account numbers, balances, or transaction figures. If the operation needs something you do not have (account number, amount), politely ask for it. Keep replies short, clear, in the customer's language, and always quote real numbers exactly. If the customer greets you or asks who you are talking to, introduce yourself as ${agent.name}, the ${agent.title} from the ${agent.department}.`;
+  const roster = Object.values(AGENTS)
+    .map((a) => `${a.name} — ${a.title} (${a.department})`)
+    .join('; ');
+  return `\n\nYou are roleplaying as ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job} Your department is responsible for: ${agent.capabilities}. Answer as this officer. You only work with REAL data the system hands you below — never invent account numbers, balances, or transaction figures. If the operation needs something you do not have (account number, amount), politely ask for it. Keep replies short, clear, in the customer's language, and always quote real numbers exactly. If the customer greets you or asks who you are talking to, introduce yourself as ${agent.name}, the ${agent.title} from the ${agent.department}.
+
+THE FULL BANKING TEAM (you know every colleague — when a customer asks to talk to another officer by name or department, acknowledge them by name and role, say you are connecting them, and keep it short. The next message will be answered by that officer):
+${roster}
+
+IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies in this conversation may have been given by a DIFFERENT officer — do not treat them as your own. Only the message you are replying to right now is yours. If you have just taken over this chat (the customer asked to be connected to you, or you are replying first), warmly introduce yourself as ${agent.name}, the ${agent.title}. Never claim the customer was already talking to you unless you are the one who gave the previous reply.`;
+}
+
+// If the customer explicitly asks to speak to a specific officer (by name or
+// department, e.g. "i want to talk with fatima", "sara se baat karni hai",
+// "security officer se baat kru"), route the next reply to that officer.
+function resolveRequestedAgent(text) {
+  if (!text) return null;
+  const t = String(text).toLowerCase();
+  if (t.length === 0) return null;
+
+  const namesRequested = /\b(ahmed|sara|bilal|fatima|ali)\b/i.test(t);
+  const talkRequested = /\b(talk|speak|baat|bat\b|bulao|connect|transfer to|paas karo|pass|se bat|se baat|de do|de dain|de dena)\b/i.test(t);
+  if (!namesRequested && !talkRequested) return null;
+
+  const byNameOrRole = [
+    [AGENTS.transactions, /\b(sara|statement officer|statement)\b/i],
+    [AGENTS.money, /\b(bilal|cashier|teller|cash|counter)\b/i],
+    [AGENTS.account, /\b(ahmed|account officer)\b/i],
+    [AGENTS.security, /\b(fatima|security officer|fraud)\b/i],
+    [AGENTS.support, /\b(ali|customer care|customer support|support)\b/i],
+  ];
+
+  for (const [agent, re] of byNameOrRole) {
+    if (re.test(t)) return agent;
+  }
+  return null;
 }
 
 // Short spoken self-introduction used by the phone/voice flow so the caller
@@ -343,11 +377,20 @@ ${recentRows || 'No transactions yet.'}`;
 // Route a customer message to the right agent, run the real operation (if it is
 // an actionable banking intent) and return the persona + result context.
 async function routeAndExecute(text) {
-  const agent = classifyAgent(text);
+  let agent = classifyAgent(text);
+  // Security concerns always go to the Security Officer. Otherwise, if the
+  // customer explicitly asked to talk to a specific officer, route there so the
+  // handover actually happens (e.g. "i want to talk with fatima" → Fatima).
+  const requested = resolveRequestedAgent(text);
+  if (agent.id !== 'security' && requested && requested.id !== agent.id) {
+    agent = requested;
+  }
+
   const intent = detectIntent(text);
   if (!intent) {
     // Not a concrete banking operation (e.g. "kye timings hain", "loan chahiye",
-    // a scam report) — just roleplay as the routed agent; no data block needed.
+    // a scam report, "fatima se baat karni hai") — just roleplay as the routed
+    // agent; no data block needed.
     return { agent, context: null };
   }
 
