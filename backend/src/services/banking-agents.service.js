@@ -110,16 +110,27 @@ function classifyAgent(text) {
   return AGENTS.support;
 }
 
+function getAgent(id) {
+  return AGENTS[id] || null;
+}
+
 function agentPrompt(agent) {
   const roster = Object.values(AGENTS)
     .map((a) => `${a.name} — ${a.title} (${a.department})`)
     .join('; ');
-  return `\n\nYou are roleplaying as ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job} Your department is responsible for: ${agent.capabilities}. Answer as this officer. You only work with REAL data the system hands you below — never invent account numbers, balances, or transaction figures. If the operation needs something you do not have (account number, amount), politely ask for it. Keep replies short, clear, in the customer's language, and always quote real numbers exactly. If the customer greets you or asks who you are talking to, introduce yourself as ${agent.name}, the ${agent.title} from the ${agent.department}.
+  return `\n\nYou are ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job} Your department is responsible for: ${agent.capabilities}. Answer as this officer. You only work with REAL data the system hands you below — never invent account numbers, balances, or transaction figures. If the operation needs something you do not have (account number, amount), politely ask for it. Keep replies short, clear, in the customer's language, and always quote real numbers exactly.
 
-THE FULL BANKING TEAM (you know every colleague — when a customer asks to talk to another officer by name or department, acknowledge them by name and role, say you are connecting them, and keep it short. The next message will be answered by that officer):
+You are part of a bank team and you know every colleague. If a customer asks to talk to another officer by name or department, acknowledge them warmly and tell the customer the next reply will come from that officer. Then the system routes their next message to that officer automatically — you do NOT need to act as a middle-man, transfer, or connector.
 ${roster}
 
-IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies in this conversation may have been given by a DIFFERENT officer — do not treat them as your own. Only the message you are replying to right now is yours. If you have just taken over this chat (the customer asked to be connected to you, or you are replying first), warmly introduce yourself as ${agent.name}, the ${agent.title}. Never claim the customer was already talking to you unless you are the one who gave the previous reply.`;
+IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies in this conversation may have been given by a DIFFERENT colleague — do not treat them as your own, and never say the customer was already speaking with you (unless you personally gave the previous reply). If a HANDOVER NOTICE is present, follow it exactly. Otherwise, answer the latest message as ${agent.name}, the ${agent.title}.`;
+}
+
+// Internal system note injected the moment a different officer takes over the
+// conversation, so the new officer introduces THEMSELVES cleanly instead of
+// roleplaying as a connector or confusing the customer.
+function handoverContext(agent, previousAgent) {
+  return `\n\nHANDOVER NOTICE (internal system note — context only, do not read it aloud or repeat it): The customer was just talking to ${previousAgent.name}, the ${previousAgent.title}. Their request now belongs to your department, so you are taking over this conversation. You are ${agent.name}, the ${agent.title} from the ${agent.department}. Introduce yourself as yourself, naturally and briefly, then answer their request. NEVER refer to yourself in the third person, NEVER say you are 'connecting', 'transferring' or 'handing over' the customer, and do NOT apologize for a colleague's replies. You ARE the officer they now want.`;
 }
 
 // If the customer explicitly asks to speak to a specific officer (by name or
@@ -373,30 +384,64 @@ ${recentRows || 'No transactions yet.'}`;
   return `\n\nBANKING RESULT (REAL data): ${JSON.stringify(d)}`;
 }
 
+// Each concrete banking task belongs to one specialist officer.
+function agentForIntent(intent) {
+  switch (intent) {
+    case 'stats':
+    case 'history':
+      return AGENTS.transactions; // Sara
+    case 'balance':
+      return AGENTS.account; // Ahmed
+    case 'deposit':
+    case 'withdraw':
+    case 'transfer':
+      return AGENTS.money; // Bilal
+    default:
+      return null;
+  }
+}
+
 // --- Entry point --------------------------------------------------------------
-// Route a customer message to the right agent, run the real operation (if it is
-// an actionable banking intent) and return the persona + result context.
-async function routeAndExecute(text) {
-  let agent = classifyAgent(text);
-  // Security concerns always go to the Security Officer. Otherwise, if the
-  // customer explicitly asked to talk to a specific officer, route there so the
-  // handover actually happens (e.g. "i want to talk with fatima" → Fatima).
+// Route a customer message to the right agent. The conversation keeps a "current
+// officer" (currentAgent) so the SAME officer stays with the customer across
+// follow-up messages instead of bouncing back to Support every time. The officer
+// only changes when the customer explicitly asks for someone else, raises a
+// security concern, or starts a concrete banking task belonging to another desk.
+async function routeAndExecute(text, currentAgent = null) {
   const requested = resolveRequestedAgent(text);
-  if (agent.id !== 'security' && requested && requested.id !== agent.id) {
+  const intent = detectIntent(text);
+  const securityConcern = SECURITY_RE.test(String(text || ''));
+
+  let agent;
+  if (securityConcern) {
+    // Fraud / scam concerns ALWAYS go to the Security Officer.
+    agent = AGENTS.security;
+  } else if (requested) {
+    // Explicit "talk to X" → hand over to that officer.
     agent = requested;
+  } else if (intent) {
+    // A real banking task → its specialist (stats→Sara, balance→Ahmed, money→Bilal).
+    agent = agentForIntent(intent.intent) || classifyAgent(text);
+  } else if (currentAgent) {
+    // No new task and no request → STAY with the officer already in this chat.
+    agent = getAgent(currentAgent.id) || classifyAgent(text);
+  } else {
+    agent = classifyAgent(text);
   }
 
-  const intent = detectIntent(text);
+  // Handover flag for the caller so it can inject a clean take-over notice.
+  const previousAgent = currentAgent && currentAgent.id !== agent.id ? currentAgent : null;
+
   if (!intent) {
     // Not a concrete banking operation (e.g. "kye timings hain", "loan chahiye",
-    // a scam report, "fatima se baat karni hai") — just roleplay as the routed
-    // agent; no data block needed.
-    return { agent, context: null };
+    // "apka name kia he", "fatima se baat karni hai") — just roleplay as the
+    // routed agent; no data block needed.
+    return { agent, context: null, previousAgent };
   }
 
   const outcome = await execute(intent.intent, intent.account, intent.amount, intent.raw);
   outcome.intent = intent.intent;
-  return { agent, context: buildContext(outcome, agent) };
+  return { agent, context: buildContext(outcome, agent), previousAgent };
 }
 
-module.exports = { AGENTS, classifyAgent, agentPrompt, voiceIntro, teamIntro, routeAndExecute, detectIntent };
+module.exports = { AGENTS, classifyAgent, agentPrompt, handoverContext, getAgent, voiceIntro, teamIntro, routeAndExecute, detectIntent };

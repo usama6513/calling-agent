@@ -1038,16 +1038,28 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
 
     // Digital Banking: route the customer's message to the right banking agent
     // (Account Officer / Statement Officer / Cashier / Security Officer / Support).
-    // If it is an actionable banking intent, the REAL operation runs now through
-    // BankingService and the live result is fed to the AI (no invented numbers).
-    // Each agent gets its own persona injected as a system message.
+    // The conversation remembers which officer is CURRENTLY handling it, so a
+    // follow-up question ("apka name kia he") stays with that same officer
+    // instead of bouncing back to Customer Care. The officer only changes on an
+    // explicit request, a security concern, or a concrete banking task belonging
+    // to another desk.
     let bankingAgent = null;
     if (business.type === 'banking') {
       try {
-        const routed = await BankingAgents.routeAndExecute(userMessage);
+        const currentAgent = BankingAgents.getAgent(conversation.metadata?.activeBankingAgent);
+        const routed = await BankingAgents.routeAndExecute(userMessage, currentAgent);
         bankingAgent = routed.agent;
         messages.push({ role: 'system', content: BankingAgents.agentPrompt(routed.agent) });
+        if (routed.previousAgent) {
+          messages.push({ role: 'system', content: BankingAgents.handoverContext(routed.agent, routed.previousAgent) });
+        }
         if (routed.context) messages.push({ role: 'system', content: routed.context });
+        if (routed.agent && currentAgent?.id !== routed.agent.id) {
+          await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: { metadata: { ...(conversation.metadata || {}), activeBankingAgent: routed.agent.id } },
+          });
+        }
       } catch (bankingError) {
         console.error('[BankingAgents] Operation error:', bankingError.message);
       }
