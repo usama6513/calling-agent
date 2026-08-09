@@ -448,7 +448,7 @@ Every customer message is automatically routed to the right department officer, 
 - NEVER ask for passwords/OTP/PIN/MPIN. For transfers ask only: recipient account number and amount.
 - For a transfer, always CONFIRM the amount and recipient before executing, then report the new balance and the reference number.
 - Keep replies short, clear, and in the customer's language.
-- If the user asks something that is NOT banking (e.g. loans, investment advice, fraud education), answer it normally like a good bank advisor, but warn about scams and direct to official channels.`,
+- The officer persona + shared bank knowledge cover account opening/closing, charges, minimum balance, annual tax & zakat, ATM/cards and loans (Loans Officer Zain, Branch Manager Umar) — answer from that knowledge; the right officer is auto-selected for the topic.`,
 };
 
 const GROQ_SYSTEM_PROMPT = `LANGUAGE: Auto-detect the user's language and always reply in the SAME language the user writes in. If the user writes in Urdu, reply in Urdu. If English, reply in English. If they mix (Roman Urdu/English), match their style. Never switch to English unless the user writes in English. Keep the detected language consistent throughout the conversation.`;
@@ -871,6 +871,21 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
       [/kiya hoon/gi, 'ki hoon'],
       [/gaya hoon/gi, 'gayi hoon'],
       [/aaya hoon/gi, 'aayi hoon'],
+      [/kar sakta hun/gi, 'kar sakti hun'],
+      [/sakta hun/gi, 'sakti hun'],
+      [/kar raha hun/gi, 'kar rahi hun'],
+      [/raha hun/gi, 'rahi hun'],
+      [/karta hun/gi, 'karti hun'],
+      [/deta hun/gi, 'deti hun'],
+      [/leta hun/gi, 'leti hun'],
+      [/chahata hun/gi, 'chahati hun'],
+      [/sochta hun/gi, 'sochti hun'],
+      [/bolta hun/gi, 'bolti hun'],
+      [/dekhta hun/gi, 'dekhti hun'],
+      [/janta hun/gi, 'janti hun'],
+      [/kiya hun/gi, 'ki hun'],
+      [/gaya hun/gi, 'gayi hun'],
+      [/aaya hun/gi, 'aayi hun'],
     ];
 
     for (const [re, replacement] of urduPairs) t = t.replace(re, replacement);
@@ -1011,7 +1026,41 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
 
     const history = await this.getConversationHistory(conversation.id);
     const userLanguage = detectLanguage(userMessage);
-    const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage, gender);
+
+    // Digital Banking: route the customer's message to the right banking agent
+    // (Account Officer / Statement Officer / Cashier / Security Officer / Support).
+    // The conversation remembers which officer is CURRENTLY handling it, so a
+    // follow-up question ("apka name kia he") stays with that same officer
+    // instead of bouncing back to Customer Care. The officer only changes on an
+    // explicit request, a security concern, or a concrete banking task belonging
+    // to another desk. Done here (BEFORE the system prompt) so the agent's
+    // gender can drive the Urdu gender agreement in both the prompt and output.
+    let bankingAgent = null;
+    const bankingPromptMessages = [];
+    if (business.type === 'banking') {
+      try {
+        const currentAgent = BankingAgents.getAgent(conversation.metadata?.activeBankingAgent);
+        const routed = await BankingAgents.routeAndExecute(userMessage, currentAgent);
+        bankingAgent = routed.agent;
+        bankingPromptMessages.push(BankingAgents.agentPrompt(routed.agent));
+        if (routed.previousAgent) {
+          bankingPromptMessages.push(BankingAgents.handoverContext(routed.agent, routed.previousAgent));
+        }
+        if (routed.context) bankingPromptMessages.push(routed.context);
+        if (routed.agent && currentAgent?.id !== routed.agent.id) {
+          await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: { metadata: { ...(conversation.metadata || {}), activeBankingAgent: routed.agent.id } },
+          });
+        }
+      } catch (bankingError) {
+        console.error('[BankingAgents] Operation error:', bankingError.message);
+      }
+    }
+
+    // Female officers (Sara, Fatima) must use feminine Urdu verb forms.
+    const effectiveGender = bankingAgent?.gender || gender;
+    const systemPrompt = this.buildSystemPrompt(business, channel, userLanguage, effectiveGender);
 
     // Topic-switch guard: when the latest message is a greeting or a brand-new topic,
     // drop the old (often fraud-heavy) history so the model does NOT keep replaying it.
@@ -1030,39 +1079,11 @@ BE SPECIFIC. Use real numbers (costs, yields, temperatures, pH ranges). Give pra
 
     const messages = [
       { role: 'system', content: systemPrompt },
+      ...bankingPromptMessages.map((c) => ({ role: 'system', content: c })),
     ];
 
     if (attachmentContext) {
       messages.push({ role: 'system', content: `The user has provided an attachment. You DO have access to its content via the description below - it is NOT a real file you need to open. Use it to answer the user's question accurately.\n${attachmentContext}` });
-    }
-
-    // Digital Banking: route the customer's message to the right banking agent
-    // (Account Officer / Statement Officer / Cashier / Security Officer / Support).
-    // The conversation remembers which officer is CURRENTLY handling it, so a
-    // follow-up question ("apka name kia he") stays with that same officer
-    // instead of bouncing back to Customer Care. The officer only changes on an
-    // explicit request, a security concern, or a concrete banking task belonging
-    // to another desk.
-    let bankingAgent = null;
-    if (business.type === 'banking') {
-      try {
-        const currentAgent = BankingAgents.getAgent(conversation.metadata?.activeBankingAgent);
-        const routed = await BankingAgents.routeAndExecute(userMessage, currentAgent);
-        bankingAgent = routed.agent;
-        messages.push({ role: 'system', content: BankingAgents.agentPrompt(routed.agent) });
-        if (routed.previousAgent) {
-          messages.push({ role: 'system', content: BankingAgents.handoverContext(routed.agent, routed.previousAgent) });
-        }
-        if (routed.context) messages.push({ role: 'system', content: routed.context });
-        if (routed.agent && currentAgent?.id !== routed.agent.id) {
-          await prisma.conversation.update({
-            where: { id: conversation.id },
-            data: { metadata: { ...(conversation.metadata || {}), activeBankingAgent: routed.agent.id } },
-          });
-        }
-      } catch (bankingError) {
-        console.error('[BankingAgents] Operation error:', bankingError.message);
-      }
     }
 
     const urls = URLScanner.extractUrls(userMessage);
@@ -1198,7 +1219,7 @@ Follow these rules STRICTLY:
       throw new Error('No response generated from AI');
     }
 
-    if (gender === 'female') {
+    if (effectiveGender === 'female') {
       assistantMessage = this.feminineUrdu(assistantMessage);
     }
 

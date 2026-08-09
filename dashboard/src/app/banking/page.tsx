@@ -47,7 +47,9 @@ const AGENT_EMOJI: Record<string, string> = {
   account: '📒',
   transactions: '🧾',
   money: '💵',
+  loans: '💰',
   security: '🛡️',
+  manager: '🧑‍💼',
   support: '🎧',
 };
 
@@ -57,6 +59,9 @@ const QUICK_PROMPTS: { label: string; text: string }[] = [
   { label: '🧾 History', text: 'last transactions dikhao CA-0946-6912-4375' },
   { label: '💵 Deposit', text: '5000 deposit karo CA-0946-6912-4375' },
   { label: '🛡️ Scam', text: 'mujhe scam call aya hai, OTP share kiya' },
+  { label: '💰 Loan', text: 'loan lena ho to process kya he, kya chahiye' },
+  { label: '🧑‍💼 Manager', text: 'mujhe bank manager se bat karni he' },
+  { label: '🪙 Zakat & Tax', text: 'zakat aur yearly tax kitna cutta he' },
   { label: '🎧 Timings', text: 'bank ki timings kya hain?' },
 ];
 
@@ -338,12 +343,14 @@ export default function BankingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
                     { emoji: '📒', name: 'Ahmed', title: 'Account Officer', dept: 'Accounts Dept', ask: '"balance check karo"' },
                     { emoji: '🧾', name: 'Sara', title: 'Statement Officer', dept: 'Records & Statements', ask: '"kitni baar deposit kia, types batao"' },
                     { emoji: '💵', name: 'Bilal', title: 'Cashier / Teller', dept: 'Counter / Cash', ask: '"5000 deposit karo"' },
+                    { emoji: '💰', name: 'Zain', title: 'Loan Officer', dept: 'Loans & Credit', ask: '"loan ka process batao"' },
                     { emoji: '🛡️', name: 'Fatima', title: 'Security Officer', dept: 'Security & Fraud Prevention', ask: '"scam call aya, OTP share kiya"' },
+                    { emoji: '🧑‍💼', name: 'Umar', title: 'Branch Manager', dept: 'Banking Operations', ask: '"zakat aur account kholne ka process"' },
                     { emoji: '🎧', name: 'Ali', title: 'Customer Care', dept: 'Customer Support', ask: '"bank ki timings kya hain?"' },
                   ].map((a) => (
                     <div key={a.name} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
@@ -446,7 +453,7 @@ export default function BankingPage() {
               <div>
                 <div className="font-bold text-gray-900">Banking Agent Team {bizName ? `— ${bizName}` : ''}</div>
                 <div className="text-xs text-gray-500">
-                  Sara · Bilal · Ahmed · Fatima · Ali — your message is routed to the right officer
+                  Sara · Bilal · Ahmed · Zain · Fatima · Umar · Ali — your message is routed to the right officer
                 </div>
               </div>
             </div>
@@ -503,7 +510,7 @@ export default function BankingPage() {
                 <h2 className="text-xl font-bold text-gray-800 mb-2">Talk to the Banking Agent Team</h2>
                 <p className="text-sm text-gray-500 mb-6 text-center max-w-md">
                   Every message is routed to the right officer — Sara (statement/stats), Bilal (cash), Ahmed (accounts),
-                  Fatima (security), Ali (support).
+                  Zain (loans), Fatima (security), Umar (manager: opening/closing, tax, zakat), Ali (support).
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg w-full">
                   {QUICK_PROMPTS.map((q) => (

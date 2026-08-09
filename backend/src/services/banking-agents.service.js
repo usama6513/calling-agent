@@ -22,6 +22,11 @@ const AGENTS = {
     gender: 'male',
     job: 'Handle account balances, account details and account status.',
     capabilities: 'balance checks, account details',
+    duties: [
+      'Check the current account balance',
+      'Share account details & status (account number, type, holder name)',
+      'Guide on account-related services',
+    ],
   },
   transactions: {
     id: 'transactions',
@@ -32,6 +37,11 @@ const AGENTS = {
     gender: 'female',
     job: 'Handle transaction history, statements, and deposit/withdrawal stats (when, what time, how much, what kind).',
     capabilities: 'transaction history, statements, deposit & withdrawal summaries, per-day and per-type stats',
+    duties: [
+      'Show transaction history / statement / passbook',
+      'Show recent transactions list',
+      'Give deposit & withdrawal STATS: kitni baar, kitna, kab (date & time), kis din, aur kis type ke deposits/withdrawals huye',
+    ],
   },
   money: {
     id: 'money',
@@ -42,6 +52,11 @@ const AGENTS = {
     gender: 'male',
     job: 'Execute deposits, withdrawals and transfers at the counter.',
     capabilities: 'deposits, withdrawals, transfers',
+    duties: [
+      'Deposit money into an account',
+      'Withdraw money from an account',
+      'Transfer money to another account (with new balance + reference number)',
+    ],
   },
   security: {
     id: 'security',
@@ -52,6 +67,43 @@ const AGENTS = {
     gender: 'female',
     job: 'Handle fraud, scams, phishing, OTP/card safety and suspicious activity.',
     capabilities: 'fraud & scam guidance, security warnings',
+    duties: [
+      'Check if a message / call / SMS is a fraud or scam',
+      'Guide on OTP, PIN, CVV and debit card safety',
+      'Advise on suspicious activity and how to block a card / report fraud',
+    ],
+  },
+  loans: {
+    id: 'loans',
+    name: 'Zain',
+    title: 'Loan Officer',
+    department: 'Loans & Credit Department',
+    emoji: '💰',
+    gender: 'male',
+    job: 'Handle all loans: personal, home, auto and business loans — eligibility, documents, process, markup/repayment.',
+    capabilities: 'loan process, eligibility, documents, markup & repayment',
+    duties: [
+      'Explain the loan application process (personal, home, auto, business)',
+      'Tell eligibility and required documents (CNIC, bank statement, salary slips / business proof)',
+      'Explain markup rate, repayment plan and loan amount range (Rs 50,000 – Rs 3,000,000)',
+    ],
+  },
+  manager: {
+    id: 'manager',
+    name: 'Umar',
+    title: 'Branch Manager',
+    department: 'Banking Operations Department',
+    emoji: '🧑‍💼',
+    gender: 'male',
+    job: 'Handle account opening, account closing, charges & fees, minimum balance, annual taxes & zakat, bank policies and complaint escalation.',
+    capabilities: 'account opening/closing, charges, minimum balance, tax & zakat, policies, complaints',
+    duties: [
+      'Account opening — process, documents and charges',
+      'Account closing — process and refunds',
+      'Minimum balance rules and account charges / fees',
+      'Annual tax & zakat deductions',
+      'Complaints and policy decisions / escalation',
+    ],
   },
   support: {
     id: 'support',
@@ -62,15 +114,54 @@ const AGENTS = {
     gender: 'male',
     job: 'Handle general questions: accounts, cards, loans, timings, complaints and everything else.',
     capabilities: 'general support, guidance, referrals',
+    duties: [
+      'Answer general bank questions (timings, cards, accounts, loans, services)',
+      'Guide the customer and refer them to the right officer',
+      'Handle complaints and route them appropriately',
+    ],
   },
 };
+
+// Shared bank-policy knowledge — EVERY officer knows this so the customer gets a
+// correct answer no matter which agent is replying. Only REAL numbers from the
+// system are account-specific; these are standard published policies.
+const BANK_KNOWLEDGE = `
+## SHARED BANK KNOWLEDGE (you know ALL of this — answer from here when asked)
+### Account opening
+- Opening a NEW account (digital): choose Savings or Current -> provide CNIC (Pakistani ID) + recent photo -> make the initial deposit (Savings Rs 1,000) -> account number is issued instantly.
+- Opening charges: Savings account opening is FREE (digital). Current account has a one-time opening fee of Rs 500.
+- Documents needed: CNIC and one recent photo. No office visit needed for digital opening.
+### Minimum balance & fees
+- Savings account: minimum balance Rs 1,000. Current account: minimum balance Rs 25,000.
+- If the balance falls below minimum: Savings Rs 200 and Current Rs 500 deducted per quarter.
+### Account closing
+- To close an account: withdraw the full balance, block/return the debit card, then confirm closing through the app or a branch with your CNIC.
+- Closing is FREE of charge; the remaining balance is refunded after any pending fees are deducted.
+### Debit card & ATM
+- A debit card is issued FREE with every new account; PIN is set at activation.
+- ATM cash withdrawal limit: Rs 25,000 per day (can be raised on request).
+- Lost/stolen card: block immediately in the app or via the 24/7 helpline; replacement card costs Rs 300 and arrives in 3-5 working days.
+### Taxes & zakat (annual)
+- ZAKAT: 2.5% of the savings balance is deducted once a year (1st of Ramadan) when the balance is above the Nisab threshold (roughly Rs 1.3 million). Current accounts are NOT charged zakat.
+- WITHHOLDING TAX (WHT): the bank deducts 15% income tax from the profit/return paid on deposits, as per FBR rules.
+- A tax deduction certificate (TDS) is available on request for tax filing.
+### Loans (handled by the Loan Officer, Zain)
+- Personal loan range: Rs 50,000 to Rs 3,000,000.
+- Requirements: CNIC + last 3 months bank statement + salary slips (salaried) or business proof (self-employed).
+- Process: apply via app or branch -> eligibility & credit check -> approval in 1-2 working days -> amount credited to the account, repaid in monthly installments.
+- The markup rate and repayment plan are always shown before approval — no hidden charges.
+- Home, auto and business loans are also available; amount and documents depend on the product.
+### General
+- Branch timings: Monday to Saturday 9am - 5pm; the app works 24/7.
+- 24/7 helpline: 111-000-000. For lost cards, suspicious transactions or any fraud, block immediately and call the helpline.
+- Unresolved complaints are escalated to the Branch Manager (Umar), who approves policy decisions, fee waivers and closures.`;
 
 // Spoken greeting that introduces the whole team — used by the phone/voice flow
 // so a caller knows which officers they can talk to.
 function teamIntro(businessName) {
-  const names = [AGENTS.account, AGENTS.transactions, AGENTS.money, AGENTS.security, AGENTS.support];
+  const names = [AGENTS.account, AGENTS.transactions, AGENTS.money, AGENTS.loans, AGENTS.security, AGENTS.manager, AGENTS.support];
   const intro = names.map((a) => `${a.name}, ${a.title}`).join('; ');
-  return `Hello! You have reached ${businessName || 'our bank'}. You are speaking to our AI banking team. ${intro}. Just tell us what you need. For example, say balance check, deposit, withdraw, transfer, statement, or my transaction stats. How can we help you today?`;
+  return `Hello! You have reached ${businessName || 'our bank'}. You are speaking to our AI banking team. ${intro}. Just tell us what you need. For example, say balance check, deposit, withdraw, transfer, statement, my transaction stats, or loan. How can we help you today?`;
 }
 
 // --- Routing -----------------------------------------------------------------
@@ -92,12 +183,22 @@ const BALANCE_RE = /\b(balance|kitna balance|balance check|balance dekh|paisa ki
 
 const SECURITY_RE = /\b(scam|fraud|dhoka|dhuqka|phishing|phish|suspicious|suspicious activity|fake call|fake sms|fake message|otp|otp share|pin share|cvv|mpin|card block|block card|card freeze|hack|hacking|stolen card|unauthorized|unauthorised|foriegn transaction|unknown transaction|report fraud|complaint.*bank|hacker|vishing|smishing)\b/i;
 
+const LOAN_RE = /\b(loan|loans|qarz|qarza|qarz le|loan le|loan chahiye|loan lena|loan ka process|loan approve|loan approve karo|loan apply|finance|financing|mortgage|girvi|rehn|istehsal|personal loan|home loan|car loan|auto loan|business loan|loan ke liye|loan k liye)\b/i;
+
+// Bank policy desk (Branch Manager): account opening/closing, charges & fees,
+// minimum balance, annual tax & zakat, ATM/card, complaints/escalation.
+const MANAGER_RE = /\b(manager|branch manager|bank manager|account kholna|account kholne|account khulwana|account khol|new account|account open|open account|account banao|account banwana|account close|account band|account band karna|close account|account close karne|account kholne ka process|charges|charge kitna|fee|fees|minimum balance|min balance|kam se kam balance|kam say kam balance|zakat|zakah|tax|taxes|income tax|withholding|wht|annual tax|salana tax|sarfa|atm|debit card|atm card|complaint|shikayat|complaint karna|shikayat karna)\b/i;
+
 function classifyAgent(text) {
   if (!text) return AGENTS.support;
   const t = String(text);
 
   // Security concerns always go to the Security Officer first.
   if (SECURITY_RE.test(t)) return AGENTS.security;
+  // Loans & credit → Loan Officer.
+  if (LOAN_RE.test(t)) return AGENTS.loans;
+  // Bank policy: opening/closing, charges, min balance, tax/zakat, manager, complaints.
+  if (MANAGER_RE.test(t)) return AGENTS.manager;
   // Stats / statement / history questions → Statement Officer. Guarded against
   // direct money COMMANDS ("5000 deposit karo" stays with the Cashier) but a
   // past-tense question ("kitna withdraw kia tha") is treated as a stats query.
@@ -118,12 +219,29 @@ function agentPrompt(agent) {
   const roster = Object.values(AGENTS)
     .map((a) => `${a.name} — ${a.title} (${a.department})`)
     .join('; ');
-  return `\n\nYou are ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job} Your department is responsible for: ${agent.capabilities}. Answer as this officer. You only work with REAL data the system hands you below — never invent account numbers, balances, or transaction figures. If the operation needs something you do not have (account number, amount), politely ask for it. Keep replies short, clear, in the customer's language, and always quote real numbers exactly.
+  const dutyList = agent.duties.map((d, i) => `${i + 1}) ${d}`).join('\n');
+  const genderLine = agent.gender === 'female'
+    ? '- You are a FEMALE officer. When speaking Urdu, ALWAYS use feminine verb forms about yourself: "main karti hoon", "main kar sakti hoon", "main bata sakti hoon", "main soch rahi hoon". NEVER say "kar sakta hoon", "karta hoon", "raha hoon".'
+    : '- You are a MALE officer. When speaking Urdu, use masculine verb forms about yourself: "main karta hoon", "main kar sakta hoon", "main bata sakta hoon".';
+  return `\n\nYou are ${agent.name}, the ${agent.title} at this bank (${agent.department}). ${agent.job}
 
-You are part of a bank team and you know every colleague. If a customer asks to talk to another officer by name or department, acknowledge them warmly and tell the customer the next reply will come from that officer. Then the system routes their next message to that officer automatically — you do NOT need to act as a middle-man, transfer, or connector.
+## YOUR DUTIES — when the customer asks about your job ("ap kia kia kam kr skte he", "apke duties kya he", "ap ka kam kya he", "what is your job", "what can you do"):
+Reply with a SHORT numbered list of EXACTLY these duties, in the customer's language. Then one short line offering help. NEVER dodge, NEVER reply "what exactly do you need", NEVER repeat their question back, NEVER start with "Kya aapko koi specific issue hai".
+${dutyList}
+
+## RULES
+- You are ALWAYS ${agent.name}. NEVER pretend to be another officer, NEVER invent a transfer or handoff on your own. Only when a HANDOVER NOTICE appears do you take over from a colleague.
+- Work only with REAL data the system hands you — never invent account numbers, balances or transaction figures. If you need an account number or amount, politely ask for it.
+- Keep replies short, clear, in the customer's language; quote real numbers exactly.
+${genderLine}
+
+## SHARED BANK KNOWLEDGE (all officers know this)
+${BANK_KNOWLEDGE}
+
+You are part of a bank team and you know every colleague. If a customer asks to talk to another officer by name or department, acknowledge them warmly and say the next reply will come from that officer — the system routes it automatically.
 ${roster}
 
-IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies in this conversation may have been given by a DIFFERENT colleague — do not treat them as your own, and never say the customer was already speaking with you (unless you personally gave the previous reply). If a HANDOVER NOTICE is present, follow it exactly. Otherwise, answer the latest message as ${agent.name}, the ${agent.title}.`;
+IMPORTANT: This is ONE shared conversation for the whole bank team. Earlier replies may have been given by a DIFFERENT colleague — do not treat them as your own, and never say the customer was already speaking with you. Answer the latest message as ${agent.name}, the ${agent.title}.`;
 }
 
 // Internal system note injected the moment a different officer takes over the
@@ -149,6 +267,8 @@ function resolveRequestedAgent(text) {
     [AGENTS.transactions, /\b(sara|statement officer|statement)\b/i],
     [AGENTS.money, /\b(bilal|cashier|teller|cash|counter)\b/i],
     [AGENTS.account, /\b(ahmed|account officer)\b/i],
+    [AGENTS.manager, /\b(umar|branch manager|bank manager|manager)\b/i],
+    [AGENTS.loans, /\b(zain|loan officer|loan|loans)\b/i],
     [AGENTS.security, /\b(fatima|security officer|fraud)\b/i],
     [AGENTS.support, /\b(ali|customer care|customer support|support)\b/i],
   ];
@@ -180,7 +300,7 @@ function detectIntent(text) {
 
   const isStats = STATS_RE.test(t) && !MONEY_COMMAND_RE.test(t);
   const isHistory = HISTORY_RE.test(t) && !MONEY_COMMAND_RE.test(t);
-  const isBalance = BALANCE_RE.test(t);
+  const isBalance = BALANCE_RE.test(t) && !MANAGER_RE.test(t);
   const isDeposit = MONEY_RE.test(t) && /\b(deposit|jama|pay in|add money|dal|bharo)\b/i.test(t) && !/\b(withdraw|nikalo|transfer|bhejo)\b/i.test(t);
   const isWithdraw = /\b(withdraw|nikalo|nikalna|nikal karun|nikalw|nkal|cash out|bahar karo)\b/i.test(t);
   const isTransfer = /\b(transfer|bhejo|bhej do|bhejna|bhej|send|money send|paisa bhej|pesa bhej|koi aur|doosre account|dusre account|bhej dena)\b/i.test(t);
@@ -422,11 +542,18 @@ async function routeAndExecute(text, currentAgent = null) {
   } else if (intent) {
     // A real banking task → its specialist (stats→Sara, balance→Ahmed, money→Bilal).
     agent = agentForIntent(intent.intent) || classifyAgent(text);
-  } else if (currentAgent) {
-    // No new task and no request → STAY with the officer already in this chat.
-    agent = getAgent(currentAgent.id) || classifyAgent(text);
   } else {
-    agent = classifyAgent(text);
+    // No concrete task and no request. If the message clearly opens a new topic
+    // for a specialist desk (loan, bank policy/tax/zakat/manager), switch to it;
+    // otherwise STAY with the officer already handling this chat.
+    const topic = classifyAgent(text);
+    if (topic.id === 'loans' || topic.id === 'manager') {
+      agent = topic;
+    } else if (currentAgent) {
+      agent = getAgent(currentAgent.id) || topic;
+    } else {
+      agent = topic;
+    }
   }
 
   // Handover flag for the caller so it can inject a clean take-over notice.
