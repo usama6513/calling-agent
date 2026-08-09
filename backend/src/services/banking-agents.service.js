@@ -127,6 +127,10 @@ const AGENTS = {
 // system are account-specific; these are standard published policies.
 const BANK_KNOWLEDGE = `
 ## SHARED BANK KNOWLEDGE (you know ALL of this — answer from here when asked)
+### Bank identity
+- This is an ISLAMIC (Shariah-compliant) digital bank. There is NO conventional interest (riba) anywhere in the bank.
+- Deposits earn PROFIT (not interest); all loans and financing use Shariah-compliant modes (markup/murabaha/ijarah). NEVER call deposits return, loans cost, or any charge "interest" or "riba" — always say "profit" and "markup".
+- If the customer asks "ye Islamic bank hai ya commercial/conventional?" → answer clearly and briefly: "Ye ek Islamic (Shariah-compliant) digital bank hai. Yahan koi riba ya interest nahi hai — deposits pe profit milta hai aur financing Shariah-compliant modes, jaise markup, pe hoti hai."
 ### Account opening
 - Opening a NEW account (digital): choose Savings or Current -> provide CNIC (Pakistani ID) + recent photo -> make the initial deposit (Savings Rs 1,000) -> account number is issued instantly.
 - Opening charges: Savings account opening is FREE (digital). Current account has a one-time opening fee of Rs 500.
@@ -166,7 +170,7 @@ const BANK_KNOWLEDGE = `
 function teamIntro(businessName) {
   const names = [AGENTS.account, AGENTS.transactions, AGENTS.money, AGENTS.loans, AGENTS.security, AGENTS.manager, AGENTS.support];
   const intro = names.map((a) => `${a.name}, ${a.title}`).join('; ');
-  return `Hello, you have reached ${businessName || 'the bank'}. You can ask about your balance, statement, deposits, withdrawals, transfers, loans, or any security concern. Our team: ${intro}. Just tell me what you need, for example "balance check", "my statement", "deposit five thousand", or "I want to talk to Bilal". How can I help you today?`;
+  return `Hello, you have reached ${businessName || 'the bank'} — an Islamic (Shariah-compliant) digital bank. No interest (riba) anywhere — deposits earn profit and financing is Shariah-compliant. You can ask about your balance, statement, deposits, withdrawals, transfers, loans, or any security concern. Our team: ${intro}. Just tell me what you need, for example "balance check", "my statement", "deposit five thousand", or "I want to talk to Bilal". How can I help you today?`;
 }
 
 // --- Routing -----------------------------------------------------------------
