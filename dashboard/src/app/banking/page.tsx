@@ -100,6 +100,9 @@ export default function BankingPage() {
 
   // --- Inbox voice + scan state ---
   const [isRecording, setIsRecording] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [pendingVoice, setPendingVoice] = useState<string | null>(null);
+  const [recSecs, setRecSecs] = useState(0);
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
@@ -109,6 +112,9 @@ export default function BankingPage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const liveTranscriptRef = useRef('');
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function load() {
     try {
@@ -137,6 +143,18 @@ export default function BankingPage() {
   useEffect(() => {
     inboxEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [msgs, showOldChats]);
+
+  useEffect(() => {
+    return () => {
+      stopRecTimer();
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+      if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function selectAccount(acc: BankAccount) {
     setSelected(acc);
@@ -214,14 +232,16 @@ export default function BankingPage() {
   }
 
   async function sendInbox(text?: string, opts?: { channel?: string; attachmentId?: string | null; micLabel?: boolean; voiceReply?: boolean }) {
-    const message = (text ?? inboxInput).trim();
+    const useVoice = text === undefined && !!pendingVoice;
+    const message = (text ?? (useVoice ? pendingVoice : inboxInput)).trim();
     if ((!message && !pendingAttachment && opts?.attachmentId === undefined) || !bizId || inboxLoading) return;
     const channel = opts?.channel || 'banking';
-    const voiceReply = opts?.voiceReply === true;
+    const voiceReply = opts?.voiceReply === true || useVoice;
     const attachmentId = opts?.attachmentId !== undefined ? opts.attachmentId : (pendingAttachment?.id || undefined);
     const hasAttachment = !!attachmentId;
     setInboxInput('');
-    const display = opts?.micLabel && message
+    if (useVoice) setPendingVoice(null);
+    const display = (opts?.micLabel || useVoice) && message
       ? '🎤 ' + message
       : message
         ? message
@@ -318,51 +338,132 @@ export default function BankingPage() {
     });
   }
 
-  async function toggleVoiceInput() {
-    if (isRecording) {
-      if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+  function stopRecTimer() {
+    if (recTimerRef.current) {
+      clearInterval(recTimerRef.current);
+      recTimerRef.current = null;
+    }
+    setRecSecs(0);
+  }
+
+  function startRecTimer() {
+    stopRecTimer();
+    const start = Date.now();
+    recTimerRef.current = setInterval(() => setRecSecs((Date.now() - start) / 1000), 200);
+  }
+
+  function finalizeVoice() {
+    const text = (liveTranscriptRef.current || '').trim();
+    liveTranscriptRef.current = '';
+    setLiveTranscript('');
+    stopRecTimer();
+    if (text) {
+      setPendingVoice(text);
+      setInboxInput(text);
+    } else {
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, kuch sunai nahi diya. Dobara try karein.', ts: new Date().toISOString() }]);
+    }
+  }
+
+  function stopVoiceCapture() {
+    setIsRecording(false);
+    const rec = recognitionRef.current;
+    const mrec = mediaRecorderRef.current;
+    if (rec) {
+      try {
+        rec.stop();
+      } catch {
+        finalizeVoice();
+      }
+    } else if (mrec && mrec.state === 'recording') {
+      mrec.stop();
+    } else {
+      finalizeVoice();
+    }
+  }
+
+  function startVoiceCapture() {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SR) {
+      const rec = new SR();
+      recognitionRef.current = rec;
+      liveTranscriptRef.current = '';
+      rec.lang = 'en-US';
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.onresult = (e: any) => {
+        let final = '';
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) final += r[0].transcript;
+          else interim += r[0].transcript;
+        }
+        liveTranscriptRef.current = final || interim || liveTranscriptRef.current;
+        setLiveTranscript(liveTranscriptRef.current);
+      };
+      rec.onerror = () => {
+        setIsRecording(false);
+        stopRecTimer();
+      };
+      rec.onend = () => {
+        recognitionRef.current = null;
+        finalizeVoice();
+      };
+      rec.start();
+      setIsRecording(true);
+      setLiveTranscript('');
+      startRecTimer();
       return;
     }
+    // Fallback: MediaRecorder + server-side transcription
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Voice recording is not supported in this browser. Use Chrome, Edge, or Firefox.', ts: new Date().toISOString() }]);
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-      audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-        if (blob.size > 0) await handleVoiceBlob(blob);
-      };
-      recorder.start();
-      setIsRecording(true);
-    } catch {
-      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Microphone access was denied.', ts: new Date().toISOString() }]);
-    }
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStreamRef.current = stream;
+        audioChunksRef.current = [];
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+        recorder.onstop = async () => {
+          stream.getTracks().forEach((t) => t.stop());
+          const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+          if (blob.size > 0) {
+            try {
+              const transcript = await transcribeAudio(blob);
+              liveTranscriptRef.current = transcript;
+              finalizeVoice();
+            } catch {
+              setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not process your voice message.', ts: new Date().toISOString() }]);
+            }
+          } else {
+            stopRecTimer();
+            setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, kuch sunai nahi diya. Dobara try karein.', ts: new Date().toISOString() }]);
+          }
+        };
+        recorder.start();
+        setIsRecording(true);
+        setLiveTranscript('');
+        startRecTimer();
+      } catch {
+        setMsgs((prev) => [...prev, { role: 'assistant', content: 'Microphone access was denied.', ts: new Date().toISOString() }]);
+      }
+    })();
   }
 
-  async function handleVoiceBlob(blob: Blob) {
-    setVoiceBusy(true);
-    try {
-      const transcript = await transcribeAudio(blob);
-      if (!transcript.trim()) {
-        setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not hear you. Please try again.', ts: new Date().toISOString() }]);
-        return;
-      }
-      await sendInbox(transcript, { channel: 'voice', micLabel: true, voiceReply: true });
-    } catch (error) {
-      console.error('[Banking Inbox] Voice input error:', error);
-      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not process your voice message.', ts: new Date().toISOString() }]);
-    } finally {
-      setVoiceBusy(false);
+  async function toggleVoiceInput() {
+    if (isRecording) {
+      stopVoiceCapture();
+      return;
     }
+    setPendingVoice(null);
+    startVoiceCapture();
   }
 
   // --- Image / document scan ---
@@ -800,21 +901,40 @@ export default function BankingPage() {
                 <button onClick={() => setPendingAttachment(null)} className="text-gray-400 hover:text-gray-600 px-2 text-lg" title="Remove">✕</button>
               </div>
             )}
+            {(isRecording || pendingVoice) && (
+              <div className="px-4 pb-0 -mt-1">
+                {isRecording ? (
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <span className="text-sm font-semibold text-red-600 shrink-0">Speak here... 🎤</span>
+                    <span className="text-xs text-red-400 shrink-0">{recSecs.toFixed(1)}s</span>
+                    <span className="text-xs text-gray-500 truncate">{liveTranscript || 'suntay rahein, phir ⏹ dabaein'}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                    <span className="text-sm shrink-0">🎤</span>
+                    <span className="text-xs text-gray-700 truncate flex-1 min-w-0">Voice ready: &ldquo;{pendingVoice}&rdquo;</span>
+                    <span className="text-xs text-blue-500 shrink-0">phir ➤ Send dabayein</span>
+                    <button onClick={() => setPendingVoice(null)} className="text-gray-400 hover:text-gray-600 px-1 text-lg shrink-0" title="Discard">✕</button>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="p-4 flex items-end gap-3">
               <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                 <textarea
                   value={inboxInput}
-                  onChange={(e) => setInboxInput(e.target.value)}
+                  onChange={(e) => { setInboxInput(e.target.value); if (e.target.value !== pendingVoice) setPendingVoice(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendInbox(); } }}
-                  placeholder="Type, speak with 🎤, or scan a document with 📎... (e.g. stats do, 5000 deposit karo)"
+                  placeholder={isRecording ? 'Speak here... bol rahe hain' : 'Type, speak with 🎤, or scan a document with 📎... (e.g. stats do, 5000 deposit karo)'}
                   rows={1}
                   className="w-full px-4 py-3 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none resize-none"
-                  disabled={inboxLoading || voiceBusy}
+                  disabled={inboxLoading || voiceBusy || isRecording}
                 />
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={inboxLoading || voiceBusy}
+                disabled={inboxLoading || voiceBusy || isRecording}
                 title="Attach / scan a document (CNIC, cheque, receipt, statement, card)"
                 className="w-11 h-11 rounded-2xl bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 flex items-center justify-center text-lg shrink-0 transition-all"
               >
@@ -823,14 +943,15 @@ export default function BankingPage() {
               <button
                 onClick={toggleVoiceInput}
                 disabled={inboxLoading || voiceBusy}
-                title={isRecording ? 'Stop recording' : 'Record voice message'}
+                title={isRecording ? 'Stop recording — done to pehle ⏹ dabaein' : 'Record voice message'}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg shrink-0 transition-all disabled:opacity-40 ${isRecording ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 {isRecording ? '⏹' : '🎤'}
               </button>
               <button
                 onClick={() => sendInbox()}
-                disabled={(!inboxInput.trim() && !pendingAttachment) || inboxLoading || voiceBusy}
+                disabled={(!inboxInput.trim() && !pendingAttachment && !pendingVoice) || inboxLoading || voiceBusy || isRecording}
+                title="Send"
                 className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-blue-200 transition-all shrink-0 text-lg"
               >
                 ➤
